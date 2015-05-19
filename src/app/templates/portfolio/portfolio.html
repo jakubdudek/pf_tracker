@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.css">
+
+{% endblock %}
+
+{% block page_content %}
+    <div class="container">
+        
+        
+        
+        
+        <!--<button onclick="draw_table()">Update</button>-->
+        
+
+        
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="btn btn-default navbar-btn" id="update_btn">Update</button>
+                    <input type="checkbox" name="auto update" onchange="auto_update()"> Auto Update<br>
+                </div>
+            </div>
+        </nav>
+        
+        
+        
+
+        <table id="portfolio" class="display">
+            <thead>
+                <tr>
+                    <th>Ticker</th>
+                    <th>Shares</th>
+                    <th>Price</th>
+                    <th>Change ($)</th>
+                    <th>Change (%)</th>
+                    <th>Market Value ($)</th>
+                    <th>Weight (%)</th>
+                    <!--<th>Price</th>
+                    <th>Commission</th>
+                    <th>Fee</th>-->
+                </tr>
+                
+            </thead>
+            
+            <tfoot>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th id="dollar_change"></th>
+                    <th id="percent_change"></th>
+                    <th id="market_val"></th>
+                    <th></th>
+                    <!--<th>Price</th>
+                    <th>Commission</th>
+                    <th>Fee</th>-->
+                </tr>
+            </tfoot>
+        
+        
+        </table>
+    </div>
+    
+    <div id="piechart" style="min-width: 310px; height: 400px; max-width: 600px; margin: 0 auto"></div>
+    
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+    <script src="https://code.jquery.com/jquery-1.8.2.min.js"></script>
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.js"></script>
+    <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+    
+    
+    <script src="http://www.appelsiini.net/download/jquery.jeditable.mini.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js" type="text/javascript"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.13.1/jquery.validate.js"></script>
+    
+    <script src="http://code.highcharts.com/stock/highstock.js"></script>
+    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+
+    
+    
+    <script>
+        
+        function auto_update() {
+            if(looping) {
+                clearInterval(refreshIntervalId);
+                looping = 0;
+            }
+            else {
+                refreshIntervalId = setInterval(function(){draw_table();},10000);
+                looping = 1;
+            }
+  
+        }
+    
+
+    function getSymbols(holdings){
+        var symbols = [];
+        
+        // extract symbols
+        for (var key in holdings) {
+            var obj = holdings[key];
+            symbols.push(obj.Ticker);
+        }
+        
+        return symbols
+    }
+    
+    
+    function process_data(holdings, symbols, quotes){
+        for (var i = 0; i < quotes.query.results.quote.length; i++) {
+            if(symbols[i] == 'MYCASH'){
+                holdings[i].Price = "1.00";
+                holdings[i].Change = "0.00";
+                holdings[i].PercentChange ="0%";
+            }
+            else{
+                holdings[i].Price = quotes.query.results.quote[i].LastTradePriceOnly;
+                holdings[i].Change = quotes.query.results.quote[i].Change;
+                holdings[i].PercentChange = quotes.query.results.quote[i].PercentChange;
+            }
+            holdings[i]['Market Value'] = holdings[i].Price * holdings[i].Shares;
+            holdings[i]['Market Value'] = Math.round(holdings[i]['Market Value']*100)/100;
+            
+        }
+        
+        
+        
+        // calulate total market value
+        var totat_market_value =0;
+        for(var i = 0; i < holdings.length; i++) {
+            totat_market_value += holdings[i]['Market Value'];
+        }
+        
+        // calculate weight for each holding
+        var weights = []
+        var weighted_change = 0;
+        var dollar_change = 0;
+        for(var i = 0; i < holdings.length; i++) {
+            holdings[i]['Weight'] = holdings[i]['Market Value']/totat_market_value*100;
+            weighted_change += (holdings[i]['Weight'])/100*parseFloat(holdings[i]['PercentChange'])/100;
+            dollar_change += parseFloat(holdings[i]['Change'])*parseFloat(holdings[i]['Shares']);
+            holdings[i]['Weight'] = Math.round(holdings[i]['Weight']*100)/100;
+            holdings[i]['Weight'] = (holdings[i]['Weight']).toString().concat("%");
+        }
+        
+        // create list of symbol/weight pair for pie chart highchart
+        weight_data = []
+        for(var i = 0; i < holdings.length; i++){
+            var pair = [holdings[i]['Ticker'], parseFloat(holdings[i]['Weight'])];
+            weight_data[i] = pair;
+            
+        }
+        
+        // totals
+        document.getElementById('market_val').innerHTML = ("$ ").concat(totat_market_value.toString());
+        document.getElementById('percent_change').innerHTML = (Math.round(weighted_change*100*100)/100).toString().concat("%");
+        document.getElementById('dollar_change').innerHTML = ("$ ").concat(Math.round(dollar_change*100)/100).toString();
+        
+        return holdings
+    }
+    
+
+
+    function draw_table(){
+        
+        var holdings = {{ holdings|safe }}
+        var symbols = getSymbols(holdings)
+        
+        var url = "http://query.yahooapis.com/v1/public/yql";
+        var url_data = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbols + "')");
+        
+        $(document).ready(function() {
+                      
+            $.getJSON(url, 'q=' + url_data + "&format=json&diagnostics=true&env=http://datatables.org/alltables.env", function (ajax) {
+                      
+                      holdings = process_data(holdings, symbols, ajax)
+                      
+                      
+                      // draw portfolio table
+                      var dt = $('#portfolio').DataTable( {
+                                                                retrieve: true,
+                                                                   //data: holdings,
+                                                                "pageLength": 50,
+                                                                   
+                                                                   columns: [
+                                                                               { data : 'Ticker' },
+                                                                               { data : 'Shares' },
+                                                                               { data : 'Price' },
+                                                                               { data : 'Change' },
+                                                                               { data : 'PercentChange' },
+                                                                               { data : 'Market Value' },
+                                                                               { data : 'Weight' }
+                                                                               /*{ "title": "% Day Change" },
+                                                                               { "title": "% Unrealized Gain/Loss" },
+                                                                               { "title": "$ Current Price" },
+                                                                               { "title": "$ Change" },
+                                                                               { "title": "$ Day Change" },
+                                                                               { "title": "$ Unrealized Gain/Loss" },
+                                                                               { "title": "Shares Held" },
+                                                                              
+                                                                               { "title": "Cost Per Share" },
+                                                                               { "title": "$ Realized" }*/
+                                                                               
+                                                                               ],
+                                                                    //decending order of weight
+                                                                   order: [[ 6, "desc" ]]
+                                                                   } );
+                      
+
+        
+                      console.log("drawing data")
+                      dt.clear().draw();
+                      dt.rows.add(holdings); // Add new data
+                      dt.columns.adjust().draw();
+                      
+                        // Make monochrome colors and set them as default for all pies
+                        Highcharts.getOptions().plotOptions.pie.colors = (function () {
+                                                                            var colors = [],
+                                                                            base = Highcharts.getOptions().colors[0],
+                                                                            i;
+                                                                          
+                                                                            for (i = 0; i < symbols.length; i += 1) {
+                                                                                // Start out with a darkened base color (negative brighten), and end
+                                                                                // up with a much brighter color
+                                                                                colors.push(Highcharts.Color(base).brighten((i - symbols.length) / 20).get());
+                                                                            }
+                                                                            return colors;
+                                                                          }());
+                      
+                      // Build the chart
+                      $('#piechart').highcharts({
+                                                chart: {
+                                                    plotBackgroundColor: null,
+                                                    plotBorderWidth: null,
+                                                    plotShadow: false
+                                                },
+                                                title: {
+                                                    text: 'Portfolio Pie Chart'
+                                                },
+                                                tooltip: {
+                                                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                                                },
+                                                plotOptions: {
+                                                    pie: {
+                                                        allowPointSelect: true,
+                                                        cursor: 'pointer',
+                                                        dataLabels: {
+                                                            enabled: true,
+                                                            format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                                                            style: {
+                                                                color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                series: [{
+                                                         type: 'pie',
+                                                         name: 'Holdings Weight',
+                                                         data: weight_data
+                                                         }]
+                                                });
+                                    });
+                          });
+                          
+                      
+    }
+    
+    </script>
+    
+    
+    <script>
+        
+        draw_table();
+        var looping = 0;
+        var refreshIntervalId;
+        
+        </script>
+    
+    <script>
+    document.getElementById("update_btn").onclick = draw_table;
+    </script>
+
+{% endblock %}

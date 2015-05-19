@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.css">
+<link rel="stylesheet" href="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js">
+
+{% endblock %}
+
+{% block page_content %}
+    
+    <!--<div class="container">
+        <div id={{ chartID|safe }}></div>
+
+    </div>
+    <div class="container">
+        
+        <div id={{ chartID1|safe }}></div>
+
+    </div>-->
+    
+    <ul class="nav nav-tabs">
+        <li role="presentation" class="active"><a href="#">Return</a></li>
+        <li role="presentation"><a href="#">Value</a></li>
+    </ul>
+    
+    <div class="container">
+        
+        <div id="container" style="height: 400px; min-width: 310px"></div>
+        
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+
+         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('ytd')">YTD</button>
+         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1year')">1 Year</button>
+         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1month')">1 Month</button>
+         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('max')">Max</button>
+         
+                </div>
+            </div>
+        </nav>
+        
+    </div>
+    
+    
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+    <script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.1.min.js"></script>
+
+    <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+    <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
+    
+
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="http://code.highcharts.com/modules/funnel.js"></script>
+    
+    <!--<script src="http://code.highcharts.com/stock/highstock.js"></script>-->
+    <script src="http://code.highcharts.com/stock/modules/exporting.js"></script>
+    
+    <!--<script src="../static/graph.js"></script>-->
+
+
+    <script>
+  
+                          var options = {
+                            chart: {
+                                renderTo: 'container',
+                                zoomType: 'x'
+                            },
+                            title: {
+                                text: 'Time-Weighted Return'
+                            },
+                            subtitle: {
+                                text: document.ontouchstart === undefined ?
+                                'Click and drag in the plot area to zoom in' :
+                                'Pinch the chart to zoom in'
+                            },
+                            xAxis: {},
+                            yAxis: {"title": {"text": '% Return '}},
+                            legend: {
+                          
+                                layout: 'vertical',
+                                align: 'left',
+                                verticalAlign: 'top',
+                                borderWidth: 0,
+                                x: 110,
+                                y: 50,
+                                floating: true
+                            },
+                          
+                            plotOptions: {
+                                area: {
+                                    fillColor: {
+                                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+                                        stops: [
+                                                [0, Highcharts.getOptions().colors[0]],
+                                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                                ]
+                                    },
+                                    marker: {
+                                        radius: 2
+                                    },
+                                    lineWidth: 1,
+                                    states: {
+                                        hover: {
+                                            lineWidth: 1
+                                        }
+                                    },
+                                    threshold: null
+                                }
+                            },
+                          
+                            series: [{}]
+                          };
+        
+        
+        //var url = "{{ url_for('performance.get_performance') }}"
+        
+        $(document).ready(function() {
+                          
+                          get_chart_data("max", options)
+        
+                          
+        })
+                          
+                          
+        function get_chart_data(source, options){
+                              $.post( "{{ url_for('performance.get_performance') }}", source, function (data) {
+                                        
+                                        console.log(data)
+                                        
+                                        //console.log(data.data)
+                                        options.xAxis = {"categories": data.axis};
+                                        options.series =  [{
+                                                           name: 'portfolio',
+                                                           data: data.data
+                                                           },
+                                                           {
+                                                           name: 'spy',
+                                                           data: data.spy
+                                                           },
+                                                           {
+                                                           name: 'iwm',
+                                                           data: data.iwm
+                                                           }]
+                                        
+                                        var chart = new Highcharts.Chart(options);
+                                        
+                                        //$('#container').highcharts(options);
+                                        }, "json")
+                                        //.success(function() { alert("second success"); })
+                                        //.error(function() { alert("error"); })
+                                        //.complete(function() { alert("complete"); });
+                          }
+    
+    function zoom_data (source) {
+        get_chart_data(source, options)
+        
+    }
+    
+    </script>
+
+
+
+
+
+{% endblock %}
