@@ -5,8 +5,8 @@ from .. import db
 from ..models import User
 from . import portfolio
 from .forms import ProfileForm
-from ..lib import pf_utils
-from ..lib import new_utils as pf
+from ..pf_utils import pf_utils
+from ..pf_utils import pf_utils as pf
 import pandas as pd
 from pandas import DataFrame
 

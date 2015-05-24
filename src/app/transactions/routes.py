@@ -8,8 +8,8 @@ from flask_wtf.file import FileField
 from flask.ext.login import login_required, current_user
 from ..models import User
 
-from ..lib import pf_utils as utils
-from ..lib import new_utils as pf
+from ..pf_utils import pf_utils as utils
+from ..pf_utils import pf_utils as pf
 
 from app import db
 

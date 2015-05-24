@@ -6,8 +6,8 @@ from ..models import User
 from . import auth
 from .forms import LoginForm, RegisterForm
 from app import db, cache
-from ..lib import pf_utils as utils
-from ..lib import new_utils as pf
+from ..pf_utils import pf_utils as utils
+from ..pf_utils import pf_utils as pf
 
 import pandas as pd
 from app import db
