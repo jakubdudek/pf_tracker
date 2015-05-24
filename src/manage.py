@@ -4,10 +4,14 @@ from app import create_app
 from flask.ext.script import Manager
 from app import db
 from app.models import User
+from flask.ext.migrate import Migrate, MigrateCommand
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
-manager = Manager(app)
 
+
+migrate = Migrate(app, db)
+manager = Manager(app)
+manager.add_command('db', MigrateCommand)
 
 
 @manager.command
