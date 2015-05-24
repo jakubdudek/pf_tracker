@@ -15,23 +15,28 @@ from pandas.tseries import offsets
 from datetime import date
 
 from app import cache
+from app import db
 
 @performance.route('/get_performance', methods=['GET', 'POST'])
 @login_required
 def get_performance():
     if request.method == "POST":
         
+        tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
+        
         cumrates = cache.get('cumrates')
         if(cumrates is None):
             #get portfolio data
-            [worth, cumrates, invalid]=pf.get_rates(session['csv_path'])
+            symbols = pf.get_symbols(tr_by_date_df)
+            
+            [worth, cumrates, invalid]=  pf.get_rates_df(pf.get_holdings(tr_by_date_df, symbols), symbols, tr_by_date_df)
             cache.set('cumrates', cumrates)
         
         
         idx = cache.get('idx')
         if(idx is None):
             #get index data
-            idx = pf.get_index_rates(pf.get_cashflow(pf.get_trans(session['csv_path'])[0]), ['spy', 'iwm'])
+            idx = pf.get_index_rates(pf.get_cashflow(tr_by_date_df), ['spy', 'iwm'])
             cache.set('idx', idx)
 
         if ('max' in request.form):
@@ -87,6 +92,10 @@ def get_performance():
 
 
         #jsonify response
+        
+        #tmp = pd.read_sql_table('transactions2', db.engine)
+        #print(tmp)
+        
         return jsonify(axis=dates_l, data=pf_rates, spy=spy_rates_l, iwm=iwm_rates_l)
 
     return Response("ok")

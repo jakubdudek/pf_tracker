@@ -17,22 +17,17 @@ from app import cache
 @portfolio.route('/')
 @login_required
 def index():
-    mastertable = []
-    if(os.path.isfile(session['csv_path'])):
-        #[pf, pfindex, indextickers, piedata, pfmetrics, mastertable] = pf_utils.process_pf_data(csvfile=session['csv_path'])
-        holdings_ts_list = pf.get_holdings(session['csv_path'])[0]
+    try:
+        tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
+        symbols=pf.get_symbols(tr_by_date_df)
         
-        holdings_ts_list = {i:j.cumsum() for i,j in holdings_ts_list.items()}
-        holdings_ts_list = {i:j[-1] for i,j in holdings_ts_list.items()}
-        holdings_ts_list = {i:round(j, 2) for i,j in holdings_ts_list.items()}
-        holdings_dict = {i:j for i,j in holdings_ts_list.items() if j != 0.0}
-        
-        holdings_df=DataFrame(0.0, index=holdings_dict.keys(), columns=['Shares', 'Price', 'Market Value'])
-        holdings_df['Shares']=holdings_dict.values()
-        
+        holdings_ts_list = pf.get_holdings(tr_by_date_df, symbols)
+        holdings_df = pf.get_current_holdings(holdings_ts_list)
         holdings_list = pf.df_to_obj_list(holdings_df, 'Ticker')
-        
-        print(holdings_list)
+
+    except:
+        holdings_list =[]
+    
     return render_template('portfolio/portfolio.html', holdings=holdings_list)
 
 

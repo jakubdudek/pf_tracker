@@ -17,6 +17,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     name = db.Column(db.String(64))
     location = db.Column(db.String(64))
+    bio = db.Column(db.Text())
+    member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     avatar_hash = db.Column(db.String(32))
     portfolio = db.relationship('Portfolio', lazy='dynamic', backref='owner')
     transactions = db.relationship('Transactions', lazy='dynamic', backref='owner')
@@ -71,7 +73,3 @@ class Transactions(db.Model):
     Comission = db.Column(db.Float)
     Fee = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-
-
-

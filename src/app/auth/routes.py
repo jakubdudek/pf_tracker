@@ -7,8 +7,10 @@ from . import auth
 from .forms import LoginForm, RegisterForm
 from app import db, cache
 from ..lib import pf_utils as utils
+from ..lib import new_utils as pf
 
 import pandas as pd
+from app import db
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -22,29 +24,13 @@ def login():
         if user is None or not user.verify_password(form.password.data):
             flash('Invalid email or password.')
             return redirect(url_for('.login'))
+        
         #user is now logged in, make session permanent and save cvs path in session
         login_user(user, form.remember_me.data)
-        session.permanent = True
-        session['csv_path'] = os.path.join(current_app.config['UPLOAD_FOLDER'], current_user.get_id() + '.csv')
-
-        #if the csv exists, process it, else redirect to empty portfolio
-        if(os.path.isfile(session['csv_path'])):
-            return redirect(url_for('.process_csv'))
+                
         return redirect(request.args.get('next') or url_for('portfolio.index'))
+
     return render_template('auth/login.html', form=form)
-
-
-
-@auth.route('/process_csv')
-@login_required
-def process_csv():
-    print('processing'+ session['csv_path'])
-    #pf, pfindex, indextickers, piedata, pfmetrics, mastertable] = utils.process_pf_data(csvfile=session['csv_path'])
-    #cache.set('portfolio', mastertable)
-    
-    return redirect(request.args.get('next') or url_for('portfolio.index'))
-
-
 
 @auth.route('/logout')
 @login_required
