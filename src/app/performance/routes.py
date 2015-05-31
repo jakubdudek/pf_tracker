@@ -22,16 +22,24 @@ from app import db
 def get_performance():
     if request.method == "POST":
         
+        
         tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
         
         cumrates = cache.get('cumrates')
+        print("in get_performance")
         if(cumrates is None):
+            print("cache is empty")
             #get portfolio data
             symbols = pf.get_symbols(tr_by_date_df)
-            
+            print("cache is empty")
+
             [worth, cumrates, invalid]=  pf.get_rates_df(pf.get_holdings(tr_by_date_df, symbols), symbols, tr_by_date_df)
+            print("cache about to be written")
+
             cache.set('cumrates', cumrates)
+            print("cache written")
         
+
         
         idx = cache.get('idx')
         if(idx is None):

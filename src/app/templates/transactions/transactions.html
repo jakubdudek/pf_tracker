@@ -19,11 +19,23 @@
         <nav class="navbar navbar-default">
             <div class="container-fluid">
                 <div class="navbar-header">
-                    <button type="button" class="btn btn-default navbar-btn" id="btnDeleteRow">Delete</button>
-                    <button type="button" class="btn btn-default navbar-btn" >Add</button>
-                    <button type="button" class="btn btn-default navbar-btn" >Save</button>
-                    {{ wtf.quick_form(form, enctype="multipart/form-data") }}
+                    
                 </div>
+                
+                <div class="collapse navbar-collapse">
+                    
+                    <ul class="nav navbar-nav navbar-left">
+                        <button type="button" class="btn btn-default navbar-btn" id="del_btn">Delete</button>
+                        <a href="#test" role="button" class="btn btn-large btn-primary" data-toggle="modal">Add</a>
+                    </ul>
+                    
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>{{ wtf.quick_form(form, enctype="multipart/form-data", form_type="inline") }}</li>
+                    </ul>
+                </div>
+                
+   
             </div>
         </nav>
 
@@ -31,6 +43,7 @@
         <table id="transtable" class="display">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Date</th>
                     <th>Trade</th>
                     <th>Symbol</th>
@@ -44,6 +57,7 @@
             
             <tfoot>
                 <tr>
+                    <th>ID</th>
                     <th>Date</th>
                     <th>Trade</th>
                     <th>Symbol</th>
@@ -58,18 +72,110 @@
         </table>
         
     </div>
-    
 
+    
+    <div class="modal fade" id="test" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                
+                <form class="form-horizontal" action="./new_transaction" method=post>
+                <!--<form class="form-horizontal" id="myform">-->
+                    {{ form2.csrf_token }}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Add Transaction</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        
+                        <div class="form-group {% if form2.date.errors %} has-error {% endif %}">
+                            {{form2.date.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.date(placeholder="YYYY-MM-DD", class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.date.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.trade.errors %} has-error {% endif %}">
+                            {{form2.trade.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.trade(class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.trade.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.symbol.errors %} has-error {% endif %}">
+                            {{form2.symbol.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.symbol(class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.symbol.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.shares.errors %} has-error {% endif %}">
+                            {{form2.shares.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.shares(placeholder="$", class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.shares.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.price.errors %} has-error {% endif %}">
+                            {{form2.price.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.price(placeholder="$", class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.price.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.comission.errors %} has-error {% endif %}">
+                            {{form2.comission.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.comission(placeholder="$", class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.comission.errors[0] }}
+                        </div>
+                        
+                        <div class="form-group {% if form2.fee.errors %} has-error {% endif %}">
+                            {{form2.fee.label(class="col-sm-2")}}
+                            <div class="col-sm-6">
+                                {{ form2.fee(placeholder="$", class="form-control") }}
+                            </div>
+                            <p class="col-sm-4 help-block">
+                            {{ form2.fee.errors[0] }}
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" id="modal_add" sype="submit">Add</button>
+                       
+                    </div>
+               </form>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
     
     
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-    <script src="https://code.jquery.com/jquery-1.8.2.min.js"></script>
+
+
+
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
     <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
     
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     
     <script src="http://www.appelsiini.net/download/jquery.jeditable.mini.js"></script>
     <script src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"></script>
@@ -77,7 +183,11 @@
     <script src="http://jquery-datatables-editable.googlecode.com/svn/trunk/media/js/jquery.dataTables.editable.js"></script>
     <!--<script src="{{ url_for('static', filename='jquery.dataTables.editable.js') }}"></script>-->
     
+    
 <script>
+    
+    var del_changes = [];
+    var add_changes = [];
     
     function Timestamp(date) {
         a=date.split(" ");
@@ -87,10 +197,11 @@
     var data={{ transactions|safe }};
     
     $(document).ready(function() {
-                   var table=   $('#transtable').dataTable( {
+                   var table=   $('#transtable').DataTable( {
                                                            data: data,
                                                            
                                                            columns: [
+                                                                     { data: 'ID',  visible: false},
                                                                      { data: 'Date', },
                                                                      { data: 'Trade' },
                                                                      { data: 'Symbol' },
@@ -98,50 +209,66 @@
                                                                      { data: 'Price' },
                                                                      { data: 'Commission' },
                                                                      { data: 'Fee' }
+                                                                     
                                                                      ],
                                                            
+                                                           
                                                            iDisplayLength: 20,
-                                                           order: [[ 0, "desc" ]]}).makeEditable({
-                                                                                                    sUpdateURL: function(value, settings){
-                                                                                                        console.log(value)
-                                                                                                        return(value);
-                                                                                                    },
-                                                                                                    sDeleteURL: function(value, settings){
-                                                                                                        console.log(settings)
-                                                                                                        return(value);
-                                                                                                    }
-                                                                                                    //sDeleteURL: "{{ url_for('.del_trans') }}",
-                                                                                                    //sUpdateURL: "{{ url_for('.newval') }}",
-                                                                                                 
-                                                                                                 
-                                                                                                 
-                                                                                                 });
+                                                           order: [[ 0, "desc" ]]});
                       
 
          
                       $('#transtable tbody').on( 'click', 'tr', function () {
-                                             if ( $(this).hasClass('selected') ) {
-                                             $(this).removeClass('selected');
-                                             }
-                                             else {
-                                             table.$('tr.selected').removeClass('selected');
-                                             $(this).addClass('selected');
-                                             }
+                                                if ( $(this).hasClass('selected') ) {
+                                                    $(this).removeClass('selected');
+                                                }
+                                                else {
+                                                    table.$('tr.selected').removeClass('selected');
+                                                    $(this).addClass('selected');
+                                                }
                                              } );
 
                       
- 
+                      $('#del_btn').click( function () {
+                                          $.ajax({url: "{{ url_for('.del_trans') }}",
+                                                 type: "POST",
+                                                 data: {'row_id' : table.cell('.selected', 0).data() },
+                                                 success: function(result){
+                                                    console.log(result);
+                                                    table.row('.selected').remove().draw( false );
+                                                    }
+                                                 });
+                                         } );
+                      
+                      /*$('#transtable').dataTable().makeEditable({
+                                         //sUpdateURL:
+                                         sDeleteURL: "{{ url_for('.del_trans') }}"
+                                         
+                                         });*/
                       
                       
 
                   } );
-                  
-                  function hello() {
-                      console.log("hello");
-                  }
-                  
+
+
+
+
+
+                   
+
 </script>
 
+
+<script>
+    if({{ show_modal }}) {
+        $('#test').modal({show: true});
+    }
+</script>
+
+
+
+
+}
 
 
 

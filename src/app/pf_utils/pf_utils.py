@@ -1,26 +1,29 @@
 #from app import cache
 
-def get_costbasis(cvs_file):
+def get_costbasis(tr_by_date_df):
     from pandas import DataFrame
-    tr_by_date_df = get_trans(cvs_file)
-    symbols = get_symbols(tr_by_date_df)
-
-    symbols.remove('MYCASH')
     
-    cb_df = DataFrame(0.0, index=symbols, columns=['Shares', 'cb', 'cb_s'])    
+    symbols = get_symbols(tr_by_date_df)
+    #symbols.remove('MYCASH')
+    
+    basis_df = DataFrame(0.0, index=symbols, columns = ['Shares', 'Basis', 'Realized'])    
     
     # Fill the time series with amount of stock own at each date
     for (date, trans) in tr_by_date_df.iterrows():
         if(trans['Trade']=='BUY' or trans['Trade']=='SPLIT'):
-            cb_df.loc[trans['Symbol'], 'cb'] += trans['Price']*trans['Shares']+(trans['Commission']+trans['Fee'])
-            cb_df.loc[trans['Symbol'], 'cb_s'] += trans['Shares']
+            #news_basis = ((old_basis*old_shares)+(price*new_shares)) / (old_shares+new_shares)
+            old_basis = basis_df.loc[trans['Symbol'], 'Basis']
+            old_shares = basis_df.loc[trans['Symbol'], 'Shares']
+            
+            new_basis = ((old_basis * old_shares) + (trans['Price']*trans['Shares']+trans['Commission']+trans['Fee']))/(old_shares+trans['Shares'])
+            basis_df.loc[trans['Symbol'], 'Basis'] = new_basis
+            basis_df.loc[trans['Symbol'], 'Shares'] += trans['Shares']
+            
         elif(trans['Trade'] == 'SELL'):
-            cb_df.loc[trans['Symbol'], 'cb'] += cb_df.loc[trans['Symbol'], 'cb']/cb_df.loc[trans['Symbol'], 'cb']*trans['Shares']
-            cb_df.loc[trans['Symbol'], 'cb_s'] += trans['Shares']
-        
-    cb_df['per_share'] = cb_df['cb']/cb_df['cb_s']
-        
-    return cb_df       
+            basis_df.loc[trans['Symbol'], 'Shares'] += trans['Shares']
+            basis_df.loc[trans['Symbol'], 'Realized'] = (trans['Price']-basis_df.loc[trans['Symbol'], 'Basis'])/basis_df.loc[trans['Symbol'], 'Basis']*100
+            
+    return basis_df       
 
 def get_symbols(tr_by_date_df):
     return list(set(tr_by_date_df.Symbol))
@@ -76,20 +79,23 @@ def get_index_rates(cashflow_ts, symbols):
 #@cache.cached(key_prefix='all_comments')
 def get_holdings(tr_by_date_df, symbols):
     import pandas as pd
-    from pandas import Series
+    from pandas import Series, DataFrame
     from datetime import date
    
     #[tr_by_date_df, symbols]=get_trans(csv_file) 
      
     # Create a time series for each stock 
     holdings_ts_list={}
+    holdings_df_list={}
     for symbol in symbols:
         index= tr_by_date_df[tr_by_date_df.Symbol == symbol].index.drop_duplicates().order()
  
         if (symbol == 'MYCASH'):
             holdings_ts_list[symbol]=Series(0.0, index=pd.to_datetime(tr_by_date_df.index).drop_duplicates().order())
+            holdings_df_list[symbol]=DataFrame(0.0, index=pd.to_datetime(tr_by_date_df.index).drop_duplicates().order(), columns=['Shares', 'Costbasis'])
         else:        
             holdings_ts_list[symbol]=Series(0.0, index=index)
+            holdings_df_list[symbol]=DataFrame(0.0, index=index, columns=['Shares', 'Price', 'Costbasis'])
     
     
     # Fill the time series with amount of stock own at each date
@@ -97,13 +103,27 @@ def get_holdings(tr_by_date_df, symbols):
         # if dividend, add to cash, otherwise add to appropriate holding
         if(trans['Trade']=='DIVIDEND'):
             holdings_ts_list['MYCASH'][date] += trans['Shares']
+            holdings_df_list['MYCASH'].loc[date, 'Shares'] += trans['Shares']
         else:
-            holdings_ts_list[trans['Symbol']][date] += trans['Shares']        
+            holdings_ts_list[trans['Symbol']][date] += trans['Shares']
+            #holdings_df_list[trans['Symbol']].loc[date, 'Shares'] += trans['Shares']
+            holdings_df_list[trans['Symbol']].loc[date, 'Price'] = trans['Price']
+            
         
         #if a buy or a sell, adjust cash accordingly
         if(trans['Trade']=='BUY' or trans['Trade']=='SELL'):
             holdings_ts_list['MYCASH'][date] -= trans['Shares']*trans['Price']
             holdings_ts_list['MYCASH'][date] -= trans['Commission']+trans['Fee']
+            
+            holdings_df_list['MYCASH'].loc[date, 'Shares'] -= trans['Shares']*trans['Price']
+            holdings_df_list['MYCASH'].loc[date, 'Shares'] -= trans['Commission']+trans['Fee']
+                
+    
+    holdings_ts_list = {i:j.cumsum() for i,j in holdings_ts_list.items()}
+    #holdings_df_list = {i:j.cumsum() for i,j in holdings_df_list.items()}
+    #holdings_ts_list = {i:round(j, 2) for i,j in holdings_ts_list.items()}
+    
+    print("returning hodings")
 
     return holdings_ts_list
    
@@ -111,9 +131,8 @@ def get_current_holdings(holdings_ts_list):
     import pandas as pd
     from pandas import DataFrame
     
-    holdings_ts_list = {i:j.cumsum() for i,j in holdings_ts_list.items()}
     holdings_ts_list = {i:j[-1] for i,j in holdings_ts_list.items()}
-    holdings_ts_list = {i:round(j, 2) for i,j in holdings_ts_list.items()}
+    #holdings_ts_list = {i:round(j, 2) for i,j in holdings_ts_list.items()}
     holdings_dict = {i:j for i,j in holdings_ts_list.items() if j != 0.0}
         
     holdings_df=DataFrame(0.0, index=holdings_dict.keys(), columns=['Shares', 'Price', 'Market Value'])
@@ -142,10 +161,11 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
     # Cumulate positions in the time series, pad for all buisness days, 
     # convert to a data frame and merge(join) with yahoo quote.
     pf_hist_df={}
+    
+    print("about to download quotes...")
     for symbol in symbols:
-        #cumulate holdings and round
-        holdings_ts_list[symbol]=holdings_ts_list[symbol].cumsum()
-        holdings_ts_list[symbol]=np.round(holdings_ts_list[symbol],2)
+ 
+        #holdings_ts_list[symbol]=np.round(holdings_ts_list[symbol],2)
         
         #fill in missing dates and pad data
         holdings_ts_list[symbol]=holdings_ts_list[symbol].asfreq(BDay(), method='pad')
@@ -155,6 +175,9 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
     
         # download prices for all dates.  If cash create a quote of all 1s
         # of the appropriate lenght
+        
+        
+        
         if(symbol == 'MYCASH'):
             quote=DataFrame(1, index=bdays, columns=['Close'])
             # join quote with dataframe of holdings, dates with no holings with inherit nan
@@ -162,7 +185,9 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
             pf_hist_df[symbol].fillna(method='pad', inplace=True)
         else:
             try:
+                print("quote is " + symbol)
                 quote=web.DataReader(symbol, 'yahoo', pf_hist_df[symbol].index[0])
+                print("done with quotes")
                 # join quote with dataframe of holdings, dates with no holings with inherit nan
                 pf_hist_df[symbol] = pf_hist_df[symbol].join(quote['Close'].asfreq(BDay(), method='pad'), how='outer')
                 pf_hist_df[symbol].fillna(method='pad', inplace=True)
@@ -173,7 +198,9 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
                 #symbols.remove(symbol)
                 invalid_symbols.append(symbol)
                 
-        
+
+
+
     for symbol in invalid_symbols:
         symbols.remove(symbol)
  
@@ -222,13 +249,14 @@ def get_rates(csv_file):
     symbols = get_symbols(tr_by_date_df)
     holdings_ts_list = get_holdings(tr_by_date_df, symbols)
     [worth, cumrates, invalid] = get_rates_df(holdings_ts_list, symbols, tr_by_date_df)
-    return worth, cumrates, invalid
+    current = get_current_holdings(holdings_ts_list)
+    return worth, cumrates, invalid, current
     
     
+#tr = get_trans("/Users/jakubdudek/transactions_all.csv")
+cost = get_costbasis(get_trans("/Users/jakubdudek/transactions_all.csv"))
 
-#cb_df = get_costbasis("/Users/jakubdudek/transactions_all.csv")
-
-#[worth, cumrates, invalid]=get_rates("/Users/jakubdudek/transactions_all.csv")
+#[worth, cumrates, invalid, current]=get_rates("/Users/jakubdudek/transactions_all.csv")
 
 #idx = get_index_rates(get_cashflow(get_trans("/Users/jakubdudek/transactions_all.csv")[0]), ['spy', 'iwm'])
 #cumrates.fillna(1.0, inplace=True)
