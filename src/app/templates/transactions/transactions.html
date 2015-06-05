@@ -25,7 +25,7 @@
             <div class="collapse navbar-collapse">
 
                 <ul class="nav navbar-nav navbar-left">
-                    <button type="button" class="btn btn-default navbar-btn" id="del_btn">Delete</button>
+                    <!--<button type="button" class="btn btn-default navbar-btn" id="del_btn">Delete</button>-->
                     <a href="#test" role="button" class="btn btn-large btn-primary" data-toggle="modal">Add</a>
                 </ul>
 
@@ -40,7 +40,7 @@
     </nav>
 
 
-    <table id="transtable" class="display compact" cellspacing="0" width="100%">
+    <table id="transtable" class="display compact" cellspacing="0" width="80%">
         <thead>
             <tr>
                 <th>ID</th>
@@ -51,6 +51,7 @@
                 <th>Price</th>
                 <th>Commission</th>
                 <th>Fee</th>
+                <th></th>
             </tr>
 
         </thead>
@@ -65,6 +66,7 @@
                 <th>Price</th>
                 <th>Commission</th>
                 <th>Fee</th>
+                <th></th>
             </tr>
         </tfoot>
         
@@ -175,8 +177,8 @@
 
 
 
-                <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
-                <script src="http://cdn.datatables.net/1.10.5/js/jquery.dataTables.min.js"></script>
+                <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+                <script src="http://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
                 <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 
                 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
@@ -203,6 +205,7 @@
                     $(document).ready(function() {
                        var table=   $('#transtable').DataTable( {
                            data: data,
+                                                               
 
                            columns: [
                            { data: 'ID',  visible: false},
@@ -212,15 +215,41 @@
                            { data: 'Shares' },
                            { data: 'Price' },
                            { data: 'Commission' },
-                           { data: 'Fee' }
+                           { data: 'Fee' },
+                           { data: null }
 
                            ],
+                                                               "columnDefs": [ {
+                                                                              
+                                                                              "targets": -1,
+                                                                              "defaultContent": "<span> <a id=\"del\" class=\"glyphicon glyphicon-remove\" aria-hidden=\"true\"></a>  <a id=\"del\"class=\"glyphicon glyphicon-pencil\" aria-hidden=\"true\"></a> </span>"
+                                                                              } ],
+
+ 
 
 
                            iDisplayLength: 20,
                            order: [[ 1, "desc" ]]});
 
-
+                    
+                                      $('#transtable tbody').on( 'click', 'del', function () {
+                                                             console.log("in button click")
+                                                             $.ajax({url: "{{ url_for('.del_trans') }}",
+                                                                    type: "POST",
+                                                                    
+                                                                    data: {'row_id' : table.cell( $(this).parents('tr'), 0 ).data() },
+                                                                    
+                                                                    //data: {'row_id' : table.cell('.selected', 0).data() },
+                                                                    success: function(result){
+                                                                    console.log($(this).parents('tr'));
+                                                                    table.row('.selected').remove().draw( false );
+                                                                    }
+                                                                    });
+                                                       
+                                                             } );
+                                      
+                                      
+                                      
 
                        $('#transtable tbody').on( 'click', 'tr', function () {
                         if ( $(this).hasClass('selected') ) {
@@ -233,10 +262,11 @@
                     } );
 
 
-                       $('#del_btn').click( function () {
+                       $('#del').click( function () {
                           $.ajax({url: "{{ url_for('.del_trans') }}",
                              type: "POST",
-                             data: {'row_id' : table.cell('.selected', 0).data() },
+                             data: {'row_id' : table.cell( $(this).parents('tr'), 0 ).data() },
+                             //data: {'row_id' : table.cell('.selected', 0).data() },
                              success: function(result){
                                 console.log(result);
                                 table.row('.selected').remove().draw( false );
