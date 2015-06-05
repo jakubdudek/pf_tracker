@@ -8,6 +8,7 @@ from .forms import ProfileForm
 from ..pf_utils import pf_utils
 from ..pf_utils import pf_utils as pf
 import pandas as pd
+import numpy as np
 from pandas import DataFrame
 
 
@@ -23,6 +24,11 @@ def index():
         
         holdings_ts_list = pf.get_holdings(tr_by_date_df, symbols)
         holdings_df = pf.get_current_holdings(holdings_ts_list)
+        
+        cost_basis = pf.get_costbasis(tr_by_date_df)
+        holdings_df = holdings_df.join(cost_basis['Basis'])
+        holdings_df = holdings_df.join(cost_basis['Realized'])
+        
         holdings_list = pf.df_to_obj_list(holdings_df, 'Ticker')
 
     except:

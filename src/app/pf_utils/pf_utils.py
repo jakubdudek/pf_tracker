@@ -4,13 +4,12 @@ def get_costbasis(tr_by_date_df):
     from pandas import DataFrame
     
     symbols = get_symbols(tr_by_date_df)
-    #symbols.remove('MYCASH')
-    
+
     basis_df = DataFrame(0.0, index=symbols, columns = ['Shares', 'Basis', 'Realized'])    
     
     # Fill the time series with amount of stock own at each date
     for (date, trans) in tr_by_date_df.iterrows():
-        if(trans['Trade']=='BUY' or trans['Trade']=='SPLIT'):
+        if(trans['Trade']=='BUY' or trans['Trade']=='SPLIT' or trans['Trade']=='DEPOSIT'):
             #news_basis = ((old_basis*old_shares)+(price*new_shares)) / (old_shares+new_shares)
             old_basis = basis_df.loc[trans['Symbol'], 'Basis']
             old_shares = basis_df.loc[trans['Symbol'], 'Shares']
@@ -21,8 +20,9 @@ def get_costbasis(tr_by_date_df):
             
         elif(trans['Trade'] == 'SELL'):
             basis_df.loc[trans['Symbol'], 'Shares'] += trans['Shares']
-            basis_df.loc[trans['Symbol'], 'Realized'] = (trans['Price']-basis_df.loc[trans['Symbol'], 'Basis'])/basis_df.loc[trans['Symbol'], 'Basis']*100
-            
+            basis_df.loc[trans['Symbol'], 'Realized'] -= (trans['Price']-basis_df.loc[trans['Symbol'], 'Basis'])*trans['Shares']
+
+    print(basis_df)
     return basis_df       
 
 def get_symbols(tr_by_date_df):
@@ -128,13 +128,13 @@ def get_holdings(tr_by_date_df, symbols):
     return holdings_ts_list
    
 def get_current_holdings(holdings_ts_list):
-    import pandas as pd
     from pandas import DataFrame
     
     holdings_ts_list = {i:j[-1] for i,j in holdings_ts_list.items()}
     #holdings_ts_list = {i:round(j, 2) for i,j in holdings_ts_list.items()}
-    holdings_dict = {i:j for i,j in holdings_ts_list.items() if j != 0.0}
-        
+    #holdings_dict = {i:j for i,j in holdings_ts_list.items() if j != 0.0}
+    holdings_dict = {i:j for i,j in holdings_ts_list.items()}
+    
     holdings_df=DataFrame(0.0, index=holdings_dict.keys(), columns=['Shares', 'Price', 'Market Value'])
     holdings_df['Shares']=holdings_dict.values()
     
@@ -185,7 +185,7 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
             pf_hist_df[symbol].fillna(method='pad', inplace=True)
         else:
             try:
-                print("quote is " + symbol)
+                print("Fetching " + symbol)
                 quote=web.DataReader(symbol, 'yahoo', pf_hist_df[symbol].index[0])
                 print("done with quotes")
                 # join quote with dataframe of holdings, dates with no holings with inherit nan
@@ -253,23 +253,36 @@ def get_rates(csv_file):
     return worth, cumrates, invalid, current
     
     
+    
+    
+    
 #tr = get_trans("/Users/jakubdudek/transactions_all.csv")
-cost = get_costbasis(get_trans("/Users/jakubdudek/transactions_all.csv"))
+    
+        
+    
+#tr_by_date_df=get_trans("/Users/jakubdudek/transactions_all.csv")
+#symbols=get_symbols(tr_by_date_df)
+#        
+#holdings_ts_list = get_holdings(tr_by_date_df, symbols)
+#holdings_df = get_current_holdings(holdings_ts_list)
+#        
+#cost_basis = get_costbasis(tr_by_date_df)
+#holdings_df = holdings_df.join(cost_basis['Basis'])
+#holdings_df = holdings_df.join(cost_basis['Realized'])
+#
+#holdings_list = df_to_obj_list(holdings_df, 'Ticker')
+
+
+#np.round(holdings_df, decimals=2)
+
+
+
+
+#symbols=get_symbols(tr_by_date_df)
+        
+#holdings_ts_list = get_holdings(tr_by_date_df, symbols)
+#holdings_df = get_current_holdings(holdings_ts_list)    
+    
+#cost = get_costbasis(tr_by_date_df)
 
 #[worth, cumrates, invalid, current]=get_rates("/Users/jakubdudek/transactions_all.csv")
-
-#idx = get_index_rates(get_cashflow(get_trans("/Users/jakubdudek/transactions_all.csv")[0]), ['spy', 'iwm'])
-#cumrates.fillna(1.0, inplace=True)
-
-#
-#a=get_holdings("/Users/jakubdudek/transactions_all.csv")[0]
-#
-##a=[x.cumsum() for x in a]
-#
-#a = {i:j.cumsum() for i,j in a.items()}
-#a = {i:j[-1] for i,j in a.items()}
-#a = {i:round(j, 2) for i,j in a.items()}
-#a = {i:j for i,j in a.items() if j != 0.0}
-#
-#h=DataFrame(0.0, index=a.keys(), columns=['Shares', 'Price'])
-#h['Shares']=a.values()
