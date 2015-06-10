@@ -35,13 +35,20 @@
         
         <nav class="navbar navbar-default">
             <div class="container-fluid">
-                <div class="navbar-header">
+                <div class="navbar-left">
 
-         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('ytd')">YTD</button>
-         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1year')">1 Year</button>
-         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1month')">1 Month</button>
-         <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('max')">Max</button>
+                    <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('ytd')">YTD</button>
+                    <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1year')">1 Year</button>
+                    <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('1month')">1 Month</button>
+                    <button type="submit" name="button" class="btn btn-default navbar-btn" onclick="zoom_data('max')">Max</button>
          
+                </div>
+                <div class="navbar-form navbar-right">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="compare" placeholder="Ticker">
+                    </div>
+                    <button class="btn btn-default" onclick="compare()">Compare</button>
+                    <button class="btn btn-default" onclick="reset()">Reset</button>
                 </div>
             </div>
         </nav>
@@ -70,7 +77,21 @@
 
 
     <script>
-  
+        function compare() {
+            compare_tickers.push(document.getElementById('compare').value)
+            get_chart_data(current_view, options, compare_tickers)
+        }
+    
+    function reset() {
+        compare_tickers = []
+        get_chart_data(current_view, options, compare_tickers)
+
+    }
+    </script>
+
+    <script>
+        var compare_tickers = []
+        var current_view = 'max'
                           var options = {
                             chart: {
                                 renderTo: 'container',
@@ -125,20 +146,38 @@
         
         $(document).ready(function() {
                           
-                          get_chart_data("max", options)
+                          get_chart_data("max", options, compare_tickers)
         
                           
         })
                           
                           
-        function get_chart_data(source, options){
-                              $.post( "{{ url_for('performance.get_performance') }}", source, function (data) {
+        function get_chart_data(source, options, compare){
+          
+           
+            idx_data = {}
+            for(var i = 0; i < compare.length; i++) {
+                idx_data[String(i)] = compare[i]
+            }
+            
+            
+            $.post( "{{ url_for('performance.get_performance') }}", {"src" : source, "idx" : idx_data}, function (data) {
                                         
-                                        console.log(data)
-                                        
-                                        //console.log(data.data)
+                                        //console.log(data)
+                   
+                                        chart_series = []
+                   chart_series.push({name:'portfolio', data:data.data})
+                   
+                                        for(var i = 0; i < compare.length; i++) {
+                                            tmp = {}
+                                            tmp['name'] = compare[i]
+                                            tmp['data'] = data[compare[i]]
+                                            chart_series.push(tmp)
+                   
+                                        }
+                   
                                         options.xAxis = {"categories": data.axis};
-                                        options.series =  [{
+                                        /*options.series =  [{
                                                            name: 'portfolio',
                                                            data: data.data
                                                            },
@@ -149,19 +188,20 @@
                                                            {
                                                            name: 'iwm',
                                                            data: data.iwm
-                                                           }]
-                                        
+                                                           }]*/
+                                        options.series = chart_series
                                         var chart = new Highcharts.Chart(options);
                                         
                                         //$('#container').highcharts(options);
                                         }, "json")
-                                        //.success(function() { alert("second success"); })
-                                        //.error(function() { alert("error"); })
+                                        //.success(function() { alert("success"); })
+                                        .error(function() { alert("An error occured during the request"); })
                                         //.complete(function() { alert("complete"); });
                           }
     
     function zoom_data (source) {
-        get_chart_data(source, options)
+        current_view = source;
+        get_chart_data(source, options, compare_tickers)
         
     }
     

@@ -61,20 +61,24 @@ def get_index_rates(cashflow_ts, symbols):
     
     # invest cashlfows in index (stored in symbols)
     cashflow_ts.asfreq(BDay(), method='pad')
-    bdays = pd.date_range(start=cashflow_ts.index[0], end=date.today(), freq=BDay())
-    
+    bdays = pd.date_range(start=cashflow_ts.index[0], end=date.today()-BDay(1), freq=BDay())
+    invalid = []
     pf_hist_df={}
     #rate={}
     cumrate={}
     #cumrate2={}
     for symbol in symbols:
         pf_hist_df[symbol]=DataFrame(index=bdays, columns=['Shares'])
-        quote=web.DataReader(symbol, 'yahoo', cashflow_ts.index[0])
-        pf_hist_df[symbol] = pf_hist_df[symbol].join(quote['Close'].asfreq(BDay(), method='pad'), how='outer')
-        cumrate[symbol]=(pf_hist_df[symbol]['Close'].pct_change()+1).cumprod()
-        cumrate[symbol].fillna(1.0, inplace=True)
-    
-    return cumrate
+        
+        try:
+            quote=web.DataReader(symbol, 'yahoo', cashflow_ts.index[0])
+            pf_hist_df[symbol] = pf_hist_df[symbol].join(quote['Close'].asfreq(BDay(), method='pad'), how='outer')
+            cumrate[symbol]=(pf_hist_df[symbol]['Close'].pct_change()+1).cumprod()
+            cumrate[symbol].fillna(1.0, inplace=True)
+        except:
+            invalid.append(symbol)
+            
+    return cumrate, invalid 
 
 #@cache.cached(key_prefix='all_comments')
 def get_holdings(tr_by_date_df, symbols):
@@ -154,7 +158,7 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
  
     #[holdings_ts_list, symbols, tr_by_date_df] = get_holdings(csv_file)
     
-    bdays = pd.date_range(start=tr_by_date_df.index[0], end=date.today(), freq=BDay())
+    bdays = pd.date_range(start=tr_by_date_df.index[0], end=date.today()-BDay(1), freq=BDay())
     
     invalid_symbols = []; 
     
@@ -228,7 +232,9 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
     rate=((history['Worth']-history['Yesterday'])/history['Yesterday'])+1
     cumrate=rate.cumprod()
 
-    return history['Worth'], Series(cumrate, index=history.index).dropna() , invalid_symbols
+    cumrate.fillna(1.0, inplace=True)
+
+    return history['Worth'], Series(cumrate, index=history.index), invalid_symbols
     
 #@cache.cached(key_prefix='all_comments')
 def df_to_obj_list(df, index_name):
