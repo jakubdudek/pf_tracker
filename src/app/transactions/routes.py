@@ -18,6 +18,20 @@ import pandas as pd
 from app import cache
 
 
+@transactions.route('/exit', methods=['GET', 'POST'])
+@login_required
+def exit():
+    print("leaving page")
+    
+    tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
+    symbols=pf.get_symbols(tr_by_date_df)
+    
+    [worth, cumrates, invalid]=  pf.get_rates_df(pf.get_holdings(tr_by_date_df, symbols), symbols, tr_by_date_df)
+    cumrates.to_sql('cumrates'+str(current_user.get_id()), db.engine, if_exists='replace')
+    worth.to_sql('worth'+str(current_user.get_id()), db.engine, if_exists='replace')
+
+    return Response("ok")
+
 @transactions.route('/del_trans', methods=['GET', 'POST'])
 @login_required
 def del_trans():
@@ -119,6 +133,7 @@ def transactions():
 #print(transactions_list)
 
     return render_template('transactions/transactions.html', form=form, form2=form2, transactions=transactions_list, show_modal=0)
+
 
 
 
