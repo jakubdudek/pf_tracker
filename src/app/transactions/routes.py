@@ -78,17 +78,20 @@ def new_transaction():
             return redirect(url_for('.transactions'))
         else:
             print("not valid")
-            transaction_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
-            transactions_list = pf.df_to_obj_list(transaction_df, 'Date')
+            try:
+                transaction_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
+                transactions_list = pf.df_to_obj_list(transaction_df, 'Date')
 
-            #insert row id
-            for i in range(0, len(transactions_list)):
-                transactions_list[i]["DT_RowId"]=str(i)
+                #insert row id
+                #for i in range(0, len(transactions_list)):
+                #    transactions_list[i]["DT_RowId"]=str(i)
     
-            #remove time from timestamp
-            for i in range(0, len(transactions_list)):
-                transactions_list[i]['Date']=transactions_list[i]['Date'].split(' ')[0]
-
+                #remove time from timestamp
+                for i in range(0, len(transactions_list)):
+                    transactions_list[i]['Date']=transactions_list[i]['Date'].split(' ')[0]
+            except:
+                transactions_list = []
+            
             return render_template('transactions/transactions.html', form2=form2, form=form, transactions=transactions_list , show_modal=1)
         
         print("redirecting")
@@ -101,6 +104,7 @@ def new_transaction():
 def transactions():
     form = UploadForm()
     form2 = NewTransaction()
+    transactions_list=[]
     
     print("now in main view")
    
