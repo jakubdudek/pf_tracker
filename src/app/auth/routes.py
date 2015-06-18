@@ -19,18 +19,19 @@ def login():
         return redirect(url_for('.login', _external=True, _scheme='https'))
     form = LoginForm()
     if form.validate_on_submit():
-        print('form is validated')
         user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.verify_password(form.password.data):
             flash('Invalid email or password.')
-            return redirect(url_for('.login'))
+            #return redirect(url_for('.login'))
+            return render_template('auth/login.html', form=form, r_form=RegisterForm(), login_display="block", reg_display="none")
+
         
         #user is now logged in, make session permanent and save cvs path in session
         login_user(user, form.remember_me.data)
                 
         return redirect(request.args.get('next') or url_for('portfolio.index'))
 
-    return render_template('auth/login.html', form=form)
+    return render_template('auth/login.html', form=form, r_form=RegisterForm(), login_display="block", reg_display="none")
 
 @auth.route('/logout')
 @login_required
@@ -49,11 +50,12 @@ def register():
         password2 = form.password2.data;
         if password != password2:
             flash('Passwords did not match.')
-            return render_template('auth/register.html', form=form)
+            return render_template('auth/login.html', form=LoginForm(), r_form=form, login_display="none", reg_display="block")
         db.create_all()
         user = User(email=form.email.data, username=form.name.data, password=password)
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('.login'))
-    return render_template('auth/register.html', form=form)
+
+    return render_template('auth/login.html', form=LoginForm(), r_form=form, login_display="none", reg_display="block")
 

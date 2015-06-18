@@ -1,10 +1,155 @@
-{% extends "base.html" %}
+
+{% extends "bootstrap/base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% block page_content %}
-<div class="page-header">
-    <h1>Login</h1>
-</div>
-{{ wtf.quick_form(form, form_type="horizontal", horizontal_columns=('lg', 4, 8)) }}
-<li><a href="{{ url_for('auth.register') }}">Register here.</a></li>
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='login.css') }}">
 {% endblock %}
+
+
+
+{% block content %}
+
+<div class="container">
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}   
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="panel panel-login">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-6">
+                            <a href="#" class="active" id="login-form-link">Login</a>
+                        </div>
+                        <div class="col-xs-6">
+                            <a href="#" id="register-form-link">Register</a>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form id="login-form" action="./login" method="post" role="form" style="display: {{login_display}};">
+                                {{ form.csrf_token }}
+                                <div class="form-group {% if form.email.errors %} has-error {% endif %}" >
+                                    {{ form.email(placeholder="email", class="form-control", type="text", tabindex="1" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ form.email.errors[0] }}
+                                </p>
+                                <div class="form-group {% if form.password.errors %} has-error {% endif %}">
+                                    {{ form.password(placeholder="password", class="form-control", type="text", tabindex="2" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ form.password.errors[0] }}
+                                </p>
+                                <div class="form-group text-center {% if form.password.errors %} has-error {% endif %}" >
+                                    {{ form.remember_me(class="", type="checkbox", tabindex="3" ) }}
+                                    <label for="remember"> Remember Me</label>
+                                </div>
+                                <p class="help-block">
+                                    {{ form.remember_me.errors[0] }}
+                                </p>
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-sm-6 col-sm-offset-3">
+                                            <input type="submit" name="login-submit" id="login-submit" tabindex="4" class="form-control btn btn-login" value="Log In">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="text-center">
+                                                <a href="" tabindex="5" class="forgot-password">Forgot Password?</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <form id="register-form" action="./register" method="post" role="form" style="display: {{reg_display}};">
+                                {{ r_form.csrf_token }}
+                                <div class="form-group {% if r_form.name.errors %} has-error {% endif %}">
+                                    {{ r_form.name(placeholder="name", class="form-control", type="text", tabindex="1" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ r_form.name.errors[0] }}
+                                </p>
+                                <div class="form-group {% if r_form.email.errors %} has-error {% endif %}">
+                                    {{ r_form.email(placeholder="email", class="form-control", type="text", tabindex="1" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ r_form.email.errors[0] }}
+                                </p>
+                                <div class="form-group {% if r_form.password.errors %} has-error {% endif %}">
+                                    {{ r_form.password(placeholder="password", class="form-control", type="text", tabindex="2" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ r_form.password.errors[0] }}
+                                </p>
+                                <div class="form-group {% if r_form.password2.errors %} has-error {% endif %}">
+                                    {{ r_form.password2(placeholder="Confirm Password", class="form-control", type="text", tabindex="2" ) }}
+                                </div>
+                                <p class="help-block">
+                                    {{ r_form.password2.errors[0] }}
+                                </p>
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-sm-6 col-sm-offset-3">
+                                            <input type="submit" name="register-submit" id="register-submit" tabindex="4" class="form-control btn btn-register" value="Register Now">
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+
+{% block scripts %}
+{{ super() }}
+<script>
+    
+    $(function() {
+      
+      $('#login-form-link').click(function(e) {
+                                  $("#login-form").delay(100).fadeIn(100);
+                                  $("#register-form").fadeOut(100);
+                                  $('#register-form-link').removeClass('active');
+                                  $(this).addClass('active');
+                                  e.preventDefault();
+                                  });
+      $('#register-form-link').click(function(e) {
+                                     $("#register-form").delay(100).fadeIn(100);
+                                     $("#login-form").fadeOut(100);
+                                     $('#login-form-link').removeClass('active');
+                                     $(this).addClass('active');
+                                     e.preventDefault();
+                                     });
+      
+      });
+    
+    </script>
+
+{% endblock %}
+
+
+
