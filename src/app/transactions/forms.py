@@ -19,10 +19,11 @@ def date_check(form, field):
 
 def ticker_check(form, field):
     import pandas.io.data as web
+    from datetime import date
     
     if(field.data != "MYCASH"):
         try:
-            quote=web.DataReader(field.data, 'yahoo', datetime.today())
+            quote=web.DataReader(field.data, 'yahoo', date.today())
         except:
             raise ValidationError("Invalid stock ticker")
 
