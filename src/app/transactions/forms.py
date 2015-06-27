@@ -17,15 +17,17 @@ def date_check(form, field):
     except ValueError:
         raise ValidationError("Incorrect data format, should be YYYY-MM-DD")
 
+
 def ticker_check(form, field):
-    import pandas.io.data as web
-    from datetime import date
-    
-    if(field.data != "MYCASH"):
+    trade = form._fields.get("trade")
+
+    if(field.data != "MYCASH" and trade.data != "DIVIDEND"):
         try:
             quote=web.DataReader(field.data, 'yahoo', date.today())
         except:
             raise ValidationError("Invalid stock ticker")
+
+    
 
 class NewTransaction(Form):
     choices=[("BUY","BUY"), ("SELL", "SELL"), ("SPLIT", "SPLIT"), ("DIVIDEND", "DIVIDEND") , ("DEPOSIT", "DEPOSIT")]
