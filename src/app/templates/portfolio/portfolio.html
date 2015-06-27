@@ -40,6 +40,7 @@
                     <th>Basis ($)</th>
                     <th>Realized ($)</th>
                     <th>Unrealized ($)</th>
+                    <th>Unrealized (%)</th>
                 </tr>
                 
             </thead>
@@ -56,6 +57,7 @@
                     <th></th>
                     <th align="left" id="realized"></th>
                     <th align="left" id="unrealized"></th>
+                    <th></th>
                 </tr>
             </tfoot>
         </table>
@@ -138,9 +140,11 @@
         var dollar_change = 0;
         var realized = 0;
         var unrealized = 0;
+        var unrealized_p = 0;
         for(var i = 0; i < holdings.length; i++) {
             holdings[i]['Weight'] = holdings[i]['Market Value']/totat_market_value*100;
             holdings[i].Unrealized = (holdings[i].Price-holdings[i].Basis)*holdings[i].Shares
+            holdings[i].Unrealized_p = holdings[i].Unrealized/(holdings[i].Basis*holdings[i].Shares)*100
             // totals
             weighted_change += (holdings[i]['Weight'])/100*parseFloat(holdings[i]['PercentChange'])/100;
             dollar_change += parseFloat(holdings[i]['Change'])*parseFloat(holdings[i]['Shares']);
@@ -179,6 +183,7 @@
             holdings[i].Basis = (parseFloat(holdings[i].Basis)).toFixed(2)
             holdings[i].Realized = get_color((parseFloat(holdings[i].Realized)).toFixed(2))
             holdings[i].Unrealized = get_color((parseFloat(holdings[i].Unrealized)).toFixed(2))
+            holdings[i].Unrealized_p = get_color((parseFloat(holdings[i].Unrealized_p)).toFixed(2))
         }
         return holdings
     }
@@ -246,13 +251,14 @@
                         { data : 'Weight' },
                         { data : 'Basis' },
                         {data : 'Realized' },
-                        {data : 'Unrealized' }
+                        {data : 'Unrealized' },
+                        {data : 'Unrealized_p'}
                     ],
                     //decending order of weight
                     order: [[ 6, "desc" ]],
 
                     "columnDefs": [
-                        {className: 'text-right', targets: [1,2,3,4,5,6,7,8,9]}
+                        {className: 'text-right', targets: [1,2,3,4,5,6,7,8,9,10]}
                     ],
 
                 } );
