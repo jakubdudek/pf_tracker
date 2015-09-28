@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 # Virtualenv
 .Python
 bin
@@ -34,3 +35,7 @@ src/.idea/vcs.xml
 src/.idea/workspace.xml
 
 src/app/pf_utils/old_utils.py
+=======
+
+*.pyc
+>>>>>>> Stashed changes

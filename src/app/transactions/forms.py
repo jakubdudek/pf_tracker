@@ -33,7 +33,7 @@ class NewTransaction(Form):
     choices=[("BUY","BUY"), ("SELL", "SELL"), ("SPLIT", "SPLIT"), ("DIVIDEND", "DIVIDEND") , ("DEPOSIT", "DEPOSIT")]
     date = StringField('Date', validators=[Required(), date_check])
     trade = SelectField(u'Trade', choices=choices)
-    symbol = StringField('Symbol', validators=[Required(), ticker_check])
+    symbol = StringField('Symbol', validators=[Required()])
     shares = StringField('Shares', validators=[Required()])
     price = StringField('Price', validators=[Required()])
     comission = StringField('Comission', validators=[Required()])
