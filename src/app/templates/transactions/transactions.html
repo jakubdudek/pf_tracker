@@ -41,8 +41,6 @@
 <div class="container">
 
 
-
-
     <table id="transtable" class="display compact" cellspacing="0" width="80%">
         <thead>
             <tr>
@@ -54,7 +52,6 @@
                 <th>Price</th>
                 <th>Commission</th>
                 <th>Fee</th>
-                <th></th>
             </tr>
 
         </thead>
@@ -69,7 +66,6 @@
                 <th>Price</th>
                 <th>Commission</th>
                 <th>Fee</th>
-                <th></th>
             </tr>
         </tfoot>
         
@@ -79,123 +75,16 @@
 </div>
 
 
-<div class="modal fade" id="test" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-
-            <form class="form-horizontal" action="./new_transaction" method=post>
-                <!--<form class="form-horizontal" id="myform">-->
-                {{ form2.csrf_token }}
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Add Transaction</h4>
-                </div>
-                <div class="modal-body">
-
-
-                    <div class="form-group {% if form2.date.errors %} has-error {% endif %}">
-                        {{form2.date.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.date(placeholder="YYYY-MM-DD", class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.date.errors[0] }}
-                        </p>
-                        
-                    </div>
-                    
-                    <div class="form-group {% if form2.trade.errors %} has-error {% endif %}">
-                        {{form2.trade.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.trade(class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.trade.errors[0] }}
-                        </p>
-                    </div>
-                    
-                    <div class="form-group {% if form2.symbol.errors %} has-error {% endif %}">
-                        {{form2.symbol.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.symbol(class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.symbol.errors[0] }}
-                        </p>
-                    </div>
-                    
-                    <div class="form-group {% if form2.shares.errors %} has-error {% endif %}">
-                        {{form2.shares.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.shares(placeholder="$", class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.shares.errors[0] }}
-                        </p>
-                    </div>
-                    
-                    <div class="form-group {% if form2.price.errors %} has-error {% endif %}">
-                        {{form2.price.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.price(placeholder="$", class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.price.errors[0] }}
-                        </p>
-                    </div>
-                    
-                    <div class="form-group {% if form2.comission.errors %} has-error {% endif %}">
-                        {{form2.comission.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.comission(placeholder="$", class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.comission.errors[0] }}
-                        </p>
-                    </div>
-                    
-                    <div class="form-group {% if form2.fee.errors %} has-error {% endif %}">
-                        {{form2.fee.label(class="col-sm-2")}}
-                        <div class="col-sm-6">
-                            {{ form2.fee(placeholder="$", class="form-control") }}
-                        </div>
-                        <p class="col-sm-4 help-block">
-                            {{ form2.fee.errors[0] }}
-                        </p>
-                    </div>
-                    
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" id="modal_add" sype="submit">Add</button>
-
-                </div>
-            </form>
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-
-
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 
 
-
 <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="http://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
 <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
-
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-
-<script src="http://www.appelsiini.net/download/jquery.jeditable.mini.js"></script>
-<script src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"></script>
-<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.13.1/jquery.validate.js"></script>
-<script src="http://jquery-datatables-editable.googlecode.com/svn/trunk/media/js/jquery.dataTables.editable.js"></script>
-<!--<script src="{{ url_for('static', filename='jquery.dataTables.editable.js') }}"></script>-->
-
 
 <script>
 
@@ -230,13 +119,8 @@
                 { data: 'Price' },
                 { data: 'Commission' },
                 { data: 'Fee' },
-                { data: null }
             ],
             "columnDefs": [ 
-                {
-                    "targets": -1,
-                    "defaultContent": "<span> <a id=\"del\" class=\"glyphicon glyphicon-remove\" aria-hidden=\"true\"></a>  <a id=\"del\"class=\"glyphicon glyphicon-pencil\" aria-hidden=\"true\"></a> </span>"
-                },
                 {
                     className: 'text-right', 
                     targets: [4,5,6,7]
@@ -246,79 +130,8 @@
             order: [[ 1, "desc" ]]
         });
 
-
-     $('#transtable tbody').on( 'click', 'del', function () {
-       console.log("in button click")
-       $.ajax({url: "{{ url_for('.del_trans') }}",
-        type: "POST",
-
-        data: {'row_id' : table.cell( $(this).parents('tr'), 0 ).data() },
-
-                                                                    //data: {'row_id' : table.cell('.selected', 0).data() },
-                                                                    success: function(result){
-                                                                        console.log($(this).parents('tr'));
-                                                                        table.row('.selected').remove().draw( false );
-                                                                    }
-                                                                });
-
-   } );
-
-
-
-
-     $('#transtable tbody').on( 'click', 'tr', function () {
-        if ( $(this).hasClass('selected') ) {
-            $(this).removeClass('selected');
-        }
-        else {
-            table.$('tr.selected').removeClass('selected');
-            $(this).addClass('selected');
-        }
-    } );
-
-
-     $('#del').click( function () {
-      $.ajax({url: "{{ url_for('.del_trans') }}",
-       type: "POST",
-       data: {'row_id' : table.cell( $(this).parents('tr'), 0 ).data() },
-                             //data: {'row_id' : table.cell('.selected', 0).data() },
-                             success: function(result){
-                                console.log(result);
-                                table.row('.selected').remove().draw( false );
-                            }
-                        });
-  } );
-
-                      /*$('#transtable').dataTable().makeEditable({
-                                         //sUpdateURL:
-                                         sDeleteURL: "{{ url_for('.del_trans') }}"
-                                         
-                                     });*/
-
-
-
-} );
-
-
-
-
-
-
-
+ });
 </script>
-
-
-<script>
-    if({{ show_modal }}) {
-        $('#test').modal({show: true});
-    }
-</script>
-
-
-
-
-}
-
 
 
 
