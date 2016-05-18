@@ -1,16 +1,11 @@
-import os
-from flask import render_template, flash, redirect, url_for, session, g
+from flask import render_template, flash, redirect, url_for
 from flask.ext.login import login_required, current_user
 from .. import db
 from ..models import User
 from . import portfolio
 from .forms import ProfileForm
-from ..pf_utils import pf_utils
 from ..pf_utils import pf_utils as pf
 import pandas as pd
-import numpy as np
-from pandas import DataFrame
-
 
 from app import cache
 
