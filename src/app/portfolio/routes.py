@@ -14,25 +14,32 @@ from pandas import DataFrame
 
 from app import cache
 
-
 @portfolio.route('/')
 @login_required
 def index():
-    try:
-        tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
-        symbols=pf.get_symbols(tr_by_date_df)
+    holding_list = [];
+    #try:
+    tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='date')
+    symbols=pf.get_symbols(tr_by_date_df)
         
-        holdings_ts_list = pf.get_holdings(tr_by_date_df, symbols)
-        holdings_df = pf.get_current_holdings(holdings_ts_list)
-        
-        cost_basis = pf.get_costbasis(tr_by_date_df)
-        holdings_df = holdings_df.join(cost_basis['Basis'])
-        holdings_df = holdings_df.join(cost_basis['Realized'])
-        
-        holdings_list = pf.df_to_obj_list(holdings_df, 'Ticker')
 
-    except:
-        holdings_list =[]
+    holdings_ts_list = pf.get_holdings(tr_by_date_df, symbols)
+    holdings_df = pf.get_current_holdings(holdings_ts_list)
+        
+    cost_basis = pf.get_costbasis(tr_by_date_df)
+        
+    # add cost basis and realized gains
+    holdings_df = holdings_df.join(cost_basis['basis'])
+    holdings_df = holdings_df.join(cost_basis['realized'])
+        
+    print(holdings_df)
+
+    #    # turn into a list for datatables
+    holdings_list = pf.df_to_obj_list(holdings_df, 'ticker')
+    print(holdings_list)
+
+    #except:
+    #    holdings_list =[]
     
     return render_template('portfolio/portfolio.html', holdings=holdings_list)
 

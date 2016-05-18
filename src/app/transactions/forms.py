@@ -29,12 +29,12 @@ def ticker_check(form, field):
 
     
 
-class NewTransaction(Form):
-    choices=[("BUY","BUY"), ("SELL", "SELL"), ("SPLIT", "SPLIT"), ("DIVIDEND", "DIVIDEND") , ("DEPOSIT", "DEPOSIT")]
+class NewTransactionForm(Form):
+    id = StringField('ID')
     date = StringField('Date', validators=[Required(), date_check])
-    trade = SelectField(u'Trade', choices=choices)
+    trade = StringField('Symbol', validators=[Required()])
     symbol = StringField('Symbol', validators=[Required()])
     shares = StringField('Shares', validators=[Required()])
     price = StringField('Price', validators=[Required()])
-    comission = StringField('Comission', validators=[Required()])
+    commission = StringField('Commission', validators=[Required()])
     fee = StringField('Fee', validators=[Required()])

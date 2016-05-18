@@ -8,24 +8,28 @@
 {% block styles %}
 {{super()}}
 
-<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.5/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.11/css/jquery.dataTables.css">
+
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/r/dt-1.10.11/jqc-1.11.3,dt-1.10.11,b-1.1.2,se-1.1.2/datatables.min.css"/>-->
+
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.2/css/select.dataTables.min.css">
+
+<link rel="stylesheet" type="text/css" href="../static/editor.css/editor.dataTables.css">
+<!--<link rel="stylesheet" type="text/css" href="../static/editor.css/editor.bootstrap.min.css">-->
 
 {% endblock %}
 
 {% block page_content %}
 
 
-<div class="container">
+<!--<div class="container">
 
     <div id="container"></div>
     
     <nav class="navbar navbar-default">
         <div class="container-fluid">
-            <div class="navbar-left">
-
-                <button href="#test" role="button" class="btn btn-default navbar-btn" data-toggle="modal">Add</button>
-                
-            </div>
             <div class="navbar-form navbar-right">
                 <div class="form-group">
                     {{ wtf.quick_form(form, enctype="multipart/form-data", form_type="inline") }}
@@ -34,16 +38,60 @@
         </div>
     </nav>
     
-</div>
+</div>-->
+
+
+
+
+
+<div class="modal fade" id="upld_modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!--<form class="form-horizontal" action="./transactions" method=post>
+                <!--<form class="form-horizontal" id="myform">-->
+            <div class="form-group">    
+                
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Upload</h4>
+                </div>
+                <div class="modal-body">
+
+                    {{ wtf.quick_form(form, enctype="multipart/form-data", form_type="inline") }}
+                    <!--<div class="form-group {% if form.transactions.errors %} has-error {% endif %}">
+                        {{form.transactions.label(class="col-sm-2")}}
+                        <div class="col-sm-6">
+                            {{ form.transactions(class="form-control") }}
+                        </div>
+                        <p class="col-sm-4 help-block">
+                            {{ form.transactions.errors[0] }}
+                        </p>
+                        
+                    </div>-->
+                    
+                </div>
+
+                <!--<div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="modal_upld" sype="submit">Upload</button>
+
+                </div>-->
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 
 
 
 <div class="container">
-
+    {{ form2.csrf_token }}
 
     <table id="transtable" class="display compact" cellspacing="0" width="80%">
         <thead>
             <tr>
+                <th></th>
                 <th>ID</th>
                 <th>Date</th>
                 <th>Trade</th>
@@ -58,6 +106,7 @@
 
         <tfoot>
             <tr>
+                <th></th>
                 <th>ID</th>
                 <th>Date</th>
                 <th>Trade</th>
@@ -81,50 +130,165 @@
 {{ super() }}
 
 
-<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-<script src="http://cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="http://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.1.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/select/1.1.2/js/dataTables.select.min.js"></script>
+<!--<script type="text/javascript" src="https://cdn.datatables.net/r/dt-1.10.11/jqc-1.11.3,dt-1.10.11,b-1.1.2,se-1.1.2/datatables.min.js"></script>-->
+<script type="text/javascript" src="../static/editor.js/dataTables.editor.js"></script>
+<!--<script type="text/javascript" src="../static/editor.js/editor.bootstrap.min.js"></script>-->
+
 <script src="http://cdn.datatables.net/plug-ins/f2c75b7247b/integration/bootstrap/3/dataTables.bootstrap.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
+  
+
 <script>
-
-    var del_changes = [];
-    var add_changes = [];
-
-    function Timestamp(date) {
-        a=date.split(" ");
-        return a[0];
-    }
-
-    var data={{ transactions|safe }};
-
-    for(var i = 0; i < data.length; i++) {
-        data[i].Shares = (parseFloat(data[i].Shares)).toFixed(2);
-        data[i].Price = (parseFloat(data[i].Price)).toFixed(2);
-        data[i].Comission = (parseFloat(data[i].Comission)).toFixed(2);
-        data[i].Fee = (parseFloat(data[i].Fee)).toFixed(2);
-    }
-
     $(document).ready(function() {
-        var table=   $('#transtable').DataTable( {
-            data: data,
+        
+        var editor = new $.fn.dataTable.Editor( {
+            table: "#transtable",
+            idSrc:  'id',
+            ajax: {
+                remove: {
+                    type: 'POST', 
+                    url: "{{ url_for('.delete') }}"  
+                },
+                edit: {
+                    type: 'POST', 
+                    url: "{{ url_for('.create') }}"  
+                },
+                create: {
+                    type: 'POST', 
+                    url: "{{ url_for('.create') }}"  
+                }
+            },
+            fields: [
+                {
+                    name: 'id',
+                    type: 'hidden'
+                },
+                { 
+                    label: 'Date:', 
+                    name: 'date',
+                    type: 'datetime'
+                    //def: function () { return new Date(); }
+                },
+                { 
+                    label: 'Trade:', 
+                    name: 'trade', type:  "select",
+                    options: [
+                        { label: "SELECT", value: ""},
+                        { label: "BUY", value: "BUY" },
+                        { label: "SELL", value: "SELL" },
+                        { label: "DEPOSIT", value: "DEPOSIT" },
+                        { label: "WITHDRAW", value: "WITHDRAW" },
+                        { label: "DIVIDEND", value: "DIVIDEND" }
+                    ]
+                },
+                { 
+                    label: 'Symbol:', 
+                    name: 'symbol'
+                },
+                { 
+                    label: 'Shares:', 
+                    name: 'shares'
+                },
+                { 
+                    label: 'Price:', 
+                    name: 'price'
+                },
+                { 
+                    label: 'Commission:', 
+                    name: 'commission',
+                    def: '7.95'
+                },
+                { 
+                    label: 'Fee:', 
+                    name: 'fee',
+                    def: '0.00'
+                },
+            ]
+        } );
 
+        $('#transtable').on( 'click', 'tbody td:not(:first-child)', function (e) {
+            editor.inline( this, {
+                submit: 'all'
+            } );
+        } );
+
+
+        editor.on( 'preSubmit', function ( e, o, action ) {
+            
+            row = (Object.keys(o.data)[0]);
+            o.id = o.data[row].id;
+            o.symbol = o.data[row].symbol;
+            o.trade = o.data[row].trade;
+            o.date = o.data[row].date;
+            o.shares = o.data[row].shares;
+            o.price = o.data[row].price;
+            o.commission = o.data[row].commission;
+            o.fee = o.data[row].fee;
+            o.csrf_token = document.getElementById("csrf_token").value;
+            delete o.data;
+            //delete o.action;  
+            console.log(o) 
+        } );
+
+
+
+        var table=   $('#transtable').DataTable( {
+            ajax: {
+                    type: 'POST', 
+                    url: "{{ url_for('.get_table') }}"
+                },
+            dom: 'Bfrtip',
 
             columns: [
-                { data: 'ID',  visible: false},
-                { data: 'Date', },
-                { data: 'Trade' },
-                { data: 'Symbol' },
-                { data: 'Shares' },
-                { data: 'Price' },
-                { data: 'Commission' },
-                { data: 'Fee' },
+            
+                {
+                    data: null,
+                    defaultContent: '',
+                    className: 'select-checkbox',
+                    orderable: false
+                },
+
+                { data: 'id',  visible: false},
+                
+                { data: 'date'},
+                { data: 'trade'},
+                { data: 'symbol' },
+                { data: 'shares' },
+                { data: 'price' },
+                { data: 'commission'},
+                { data: 'fee' },
             ],
-            "columnDefs": [ 
+            columnDefs: [ 
                 {
                     className: 'text-right', 
-                    targets: [4,5,6,7]
+                    targets: [5,6,7,8],
+                    render: function (data){
+                        return parseFloat(data).toFixed(2);
+                    }
                 }
+            ],
+            select: {
+                style:    'os',
+                selector: 'td:first-child'
+            },
+            buttons: [
+                { extend: 'create', editor: editor },
+                //{ extend: 'edit',   editor: editor },
+                { extend: 'remove', editor: editor },
+                {
+                    extend: 'create',
+                    text: "Upload",
+                    action: function () {
+                        $('#upld_modal').modal('show');
+                    }
+                },
+                'csv'
             ],
             iDisplayLength: 20,
             order: [[ 1, "desc" ]]
@@ -132,6 +296,7 @@
 
  });
 </script>
+
 
 
 

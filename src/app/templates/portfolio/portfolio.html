@@ -108,7 +108,7 @@
         // extract symbols
         for (var key in holdings) {
             var obj = holdings[key];
-            symbols.push(obj.Ticker);
+            symbols.push(obj.ticker);
         }
         return symbols
     }
@@ -116,22 +116,29 @@
     function process_data(holdings, symbols, quotes){
         for (var i = 0; i < quotes.query.results.quote.length; i++) {
             if(symbols[i] == 'MYCASH'){
-                holdings[i].Price = "1.00";
-                holdings[i].Change = "0.00";
-                holdings[i].PercentChange ="0.00%";
+                holdings[i].price = "1.00";
+                holdings[i].change = "0.00";
+                holdings[i].percentChange ="0.00%";
             }
             else{
-                holdings[i].Price = quotes.query.results.quote[i].LastTradePriceOnly;
-                holdings[i].Change = quotes.query.results.quote[i].Change;
-                holdings[i].PercentChange = quotes.query.results.quote[i].PercentChange;
+                if(quotes.query.results.quote[i].LastTradePriceOnly != null) {
+                    holdings[i].price = quotes.query.results.quote[i].LastTradePriceOnly;
+                    holdings[i].change = quotes.query.results.quote[i].Change;
+                    holdings[i].percentChange = quotes.query.results.quote[i].PercentChange;
+                }
+                else {
+                    holdings[i].price = "0.00";
+                    holdings[i].change = "0.00";
+                    holdings[i].percentChange = "0.00%";
+                }
             }
-            holdings[i]['Market Value'] = holdings[i].Price * holdings[i].Shares;
+            holdings[i]['market value'] = holdings[i].price * holdings[i].shares;
         }
         
         // calulate total market value
         var totat_market_value =0;
         for(var i = 0; i < holdings.length; i++) {
-            totat_market_value += holdings[i]['Market Value'];
+            totat_market_value += holdings[i]['market value'];
         }
         
         // calculate weight for each holding
@@ -142,14 +149,14 @@
         var unrealized = 0;
         var unrealized_p = 0;
         for(var i = 0; i < holdings.length; i++) {
-            holdings[i]['Weight'] = holdings[i]['Market Value']/totat_market_value*100;
-            holdings[i].Unrealized = (holdings[i].Price-holdings[i].Basis)*holdings[i].Shares
-            holdings[i].Unrealized_p = holdings[i].Unrealized/(holdings[i].Basis*holdings[i].Shares)*100
+            holdings[i]['weight'] = holdings[i]['market value']/totat_market_value*100;
+            holdings[i].unrealized = (holdings[i].price-holdings[i].basis)*holdings[i].shares
+            holdings[i].unrealized_p = holdings[i].unrealized/(holdings[i].basis*holdings[i].shares)*100
             // totals
-            weighted_change += (holdings[i]['Weight'])/100*parseFloat(holdings[i]['PercentChange'])/100;
-            dollar_change += parseFloat(holdings[i]['Change'])*parseFloat(holdings[i]['Shares']);
-            realized += parseFloat(holdings[i]['Realized']);
-            unrealized += parseFloat(holdings[i]['Unrealized']);
+            weighted_change += (holdings[i]['weight'])/100*parseFloat(holdings[i]['percentChange'])/100;
+            dollar_change += parseFloat(holdings[i]['change'])*parseFloat(holdings[i]['shares']);
+            realized += parseFloat(holdings[i]['realized']);
+            unrealized += parseFloat(holdings[i]['unrealized']);
             
         }
         
@@ -157,8 +164,8 @@
         weight_data = []
         var j = 0
         for(var i = 0; i < holdings.length; i++){
-            if(parseInt(holdings[i]['Shares'])>0.1) {
-                var pair = [holdings[i]['Ticker'], parseFloat(holdings[i]['Weight'])];
+            if(parseInt(holdings[i]['shares'])>0.1) {
+                var pair = [holdings[i]['ticker'], parseFloat(holdings[i]['weight'])];
                 weight_data[j++] = pair;
             }
             
@@ -174,16 +181,16 @@
         
         //format for display
         for(var i = 0; i < holdings.length; i++) {
-            holdings[i].Shares = (parseFloat(holdings[i].Shares)).toFixed(2);
-            holdings[i].Price = (parseFloat(holdings[i].Price)).toFixed(2);
-            holdings[i].Change = get_color((parseFloat(holdings[i].Change)).toFixed(2));
-            holdings[i].PercentChange = get_color((parseFloat(holdings[i].PercentChange)).toFixed(2), 'true');
-            holdings[i]['Market Value'] = (parseFloat(holdings[i]['Market Value'])).toFixed(2);
-            holdings[i].Weight = (parseFloat(holdings[i].Weight)).toFixed(2).concat("%");
-            holdings[i].Basis = (parseFloat(holdings[i].Basis)).toFixed(2)
-            holdings[i].Realized = get_color((parseFloat(holdings[i].Realized)).toFixed(2))
-            holdings[i].Unrealized = get_color((parseFloat(holdings[i].Unrealized)).toFixed(2))
-            holdings[i].Unrealized_p = get_color((parseFloat(holdings[i].Unrealized_p)).toFixed(2))
+            holdings[i].shares = (parseFloat(holdings[i].shares)).toFixed(2);
+            holdings[i].price = (parseFloat(holdings[i].price)).toFixed(2);
+            holdings[i].change = get_color((parseFloat(holdings[i].change)).toFixed(2));
+            holdings[i].percentChange = get_color((parseFloat(holdings[i].percentChange)).toFixed(2), 'true');
+            holdings[i]['market value'] = (parseFloat(holdings[i]['market value'])).toFixed(2);
+            holdings[i].weight = (parseFloat(holdings[i].weight)).toFixed(2).concat("%");
+            holdings[i].basis = (parseFloat(holdings[i].basis)).toFixed(2)
+            holdings[i].realized = get_color((parseFloat(holdings[i].realized)).toFixed(2))
+            holdings[i].unrealized = get_color((parseFloat(holdings[i].unrealized)).toFixed(2))
+            holdings[i].unrealized_p = get_color((parseFloat(holdings[i].unrealized_p)).toFixed(2))
         }
         return holdings
     }
@@ -212,7 +219,7 @@
         var j = 0;
         var opened = [];
         for(var i = 0; i < holdings.length; i++) {
-            if(holdings[i].Shares != 0){
+            if(holdings[i].shares != 0){
                 opened[j++] = holdings[i];
             }
         }
@@ -222,6 +229,7 @@
     function draw_table(){
 
         var holdings = {{ holdings|safe }}
+        console.log(holdings);
         var symbols = getSymbols(holdings)
         
         var url = "http://query.yahooapis.com/v1/public/yql";
@@ -242,17 +250,17 @@
                     "pageLength": 50,
 
                     columns: [
-                        { data : 'Ticker' },
-                        { data : 'Shares' },
-                        { data : 'Price' },
-                        { data : 'Change' },
-                        { data : 'PercentChange' },
-                        { data : 'Market Value' },
-                        { data : 'Weight' },
-                        { data : 'Basis' },
-                        {data : 'Realized' },
-                        {data : 'Unrealized' },
-                        {data : 'Unrealized_p'}
+                        { data : 'ticker' },
+                        { data : 'shares' },
+                        { data : 'price' },
+                        { data : 'change' },
+                        { data : 'percentChange' },
+                        { data : 'market value' },
+                        { data : 'weight' },
+                        { data : 'basis' },
+                        {data : 'realized' },
+                        {data : 'unrealized' },
+                        {data : 'unrealized_p'}
                     ],
                     //decending order of weight
                     order: [[ 6, "desc" ]],

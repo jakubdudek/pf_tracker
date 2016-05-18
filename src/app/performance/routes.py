@@ -24,7 +24,7 @@ from app import db
 @login_required
 def get_performance():
     if request.method == "POST":
-        
+        print(str(request.form))
         keys = list(request.form.keys())
         print(keys)
         keys.remove('src')
@@ -37,12 +37,12 @@ def get_performance():
         print(idx)
         
      
-        tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='index')
+        tr_by_date_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='date')
         symbols=pf.get_symbols(tr_by_date_df)
 
 # try getting rates from sql and check that they are up to date
         try:
-            cumrates=pd.read_sql_table('cumrates'+str(current_user.get_id()), db.engine, index_col='index')
+            cumrates=pd.read_sql_table('cumrates'+str(current_user.get_id()), db.engine, index_col='date')
             cumrates = Series(cumrates['0'], index=cumrates.index)
             
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)

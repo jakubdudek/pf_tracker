@@ -5,34 +5,35 @@ def get_costbasis(tr_by_date_df):
     
     symbols = get_symbols(tr_by_date_df)
 
-    basis_df = DataFrame(0.0, index=symbols, columns = ['Shares', 'Basis', 'Realized'])    
+    basis_df = DataFrame(0.0, index=symbols, columns = ['shares', 'basis', 'realized'])    
     
     # Fill the time series with amount of stock own at each date
     for (date, trans) in tr_by_date_df.iterrows():
-        if(trans['Trade']=='BUY' or trans['Trade']=='SPLIT' or trans['Trade']=='DEPOSIT'):
+        if(trans['trade']=='BUY' or trans['trade']=='SPLIT' or trans['trade']=='DEPOSIT'):
             #news_basis = ((old_basis*old_shares)+(price*new_shares)) / (old_shares+new_shares)
-            old_basis = basis_df.loc[trans['Symbol'], 'Basis']
-            old_shares = basis_df.loc[trans['Symbol'], 'Shares']
+            old_basis = basis_df.loc[trans['symbol'], 'basis']
+            old_shares = basis_df.loc[trans['symbol'], 'shares']
             
-            new_basis = ((old_basis * old_shares) + (trans['Price']*trans['Shares']+trans['Commission']+trans['Fee']))/(old_shares+trans['Shares'])
-            basis_df.loc[trans['Symbol'], 'Basis'] = new_basis
-            basis_df.loc[trans['Symbol'], 'Shares'] += trans['Shares']
+            new_basis = ((old_basis * old_shares) + (trans['price']*trans['shares']+trans['commission']+trans['fee']))/(old_shares+trans['shares'])
+            basis_df.loc[trans['symbol'], 'basis'] = new_basis
+            basis_df.loc[trans['symbol'], 'shares'] += trans['shares']
             
-        elif(trans['Trade'] == 'SELL'):
-            basis_df.loc[trans['Symbol'], 'Shares'] += trans['Shares']
-            basis_df.loc[trans['Symbol'], 'Realized'] -= (trans['Price']-basis_df.loc[trans['Symbol'], 'Basis'])*trans['Shares']
+        elif(trans['trade'] == 'SELL'):
+            basis_df.loc[trans['symbol'], 'shares'] += trans['shares']
+            basis_df.loc[trans['symbol'], 'realized'] -= (trans['price']-basis_df.loc[trans['symbol'], 'basis'])*trans['shares']
 
-    print(basis_df)
+    #printprint(basis_df)
     return basis_df       
 
 def get_symbols(tr_by_date_df):
-    return list(set(tr_by_date_df.Symbol))
+    return list(set(tr_by_date_df.symbol))
 
 #@cache.cached(key_prefix='all_comments')
 def get_trans(csv_file):
     import pandas as pd
     
-    tr_by_date_df=pd.read_csv(csv_file, index_col='Date')
+
+    tr_by_date_df=pd.read_csv(csv_file, index_col='date')
     # remove NaN
     tr_by_date_df.fillna(0.0, inplace=True)     
     #convert dates to timeseries
@@ -48,7 +49,7 @@ def get_trans(csv_file):
 #@cache.cached(key_prefix='all_comments')
 def get_cashflow(tr_by_date_df):
      # retrive all deposits and withdrawals
-    return (tr_by_date_df[(tr_by_date_df.Trade == "DEPOSIT") |  (tr_by_date_df.Trade =="WITHDRAWAL")])['Shares']
+    return (tr_by_date_df[(tr_by_date_df.trade == "DEPOSIT") |  (tr_by_date_df.trade =="WITHDRAWAL")])['shares']
 
 #@cache.cached(key_prefix='all_comments')
 def get_index_rates(cashflow_ts, symbols):
@@ -68,7 +69,7 @@ def get_index_rates(cashflow_ts, symbols):
     cumrate={}
     #cumrate2={}
     for symbol in symbols:
-        pf_hist_df[symbol]=DataFrame(index=bdays, columns=['Shares'])
+        pf_hist_df[symbol]=DataFrame(index=bdays, columns=['shares'])
         
         try:
             quote=web.DataReader(symbol, 'yahoo', cashflow_ts.index[0])
@@ -92,35 +93,35 @@ def get_holdings(tr_by_date_df, symbols):
     holdings_ts_list={}
     holdings_df_list={}
     for symbol in symbols:
-        index= tr_by_date_df[tr_by_date_df.Symbol == symbol].index.drop_duplicates().order()
+        index= tr_by_date_df[tr_by_date_df.symbol == symbol].index.drop_duplicates().order()
  
         if (symbol == 'MYCASH'):
             holdings_ts_list[symbol]=Series(0.0, index=pd.to_datetime(tr_by_date_df.index).drop_duplicates().order())
-            holdings_df_list[symbol]=DataFrame(0.0, index=pd.to_datetime(tr_by_date_df.index).drop_duplicates().order(), columns=['Shares', 'Costbasis'])
+            holdings_df_list[symbol]=DataFrame(0.0, index=pd.to_datetime(tr_by_date_df.index).drop_duplicates().order(), columns=['shares', 'costbasis'])
         else:        
             holdings_ts_list[symbol]=Series(0.0, index=index)
-            holdings_df_list[symbol]=DataFrame(0.0, index=index, columns=['Shares', 'Price', 'Costbasis'])
+            holdings_df_list[symbol]=DataFrame(0.0, index=index, columns=['shares', 'price', 'costbasis'])
     
     
     # Fill the time series with amount of stock own at each date
     for (date, trans) in tr_by_date_df.iterrows():
         # if dividend, add to cash, otherwise add to appropriate holding
-        if(trans['Trade']=='DIVIDEND'):
-            holdings_ts_list['MYCASH'][date] += trans['Shares']
-            holdings_df_list['MYCASH'].loc[date, 'Shares'] += trans['Shares']
+        if(trans['trade']=='DIVIDEND'):
+            holdings_ts_list['MYCASH'][date] += trans['shares']
+            holdings_df_list['MYCASH'].loc[date, 'shares'] += trans['shares']
         else:
-            holdings_ts_list[trans['Symbol']][date] += trans['Shares']
-            #holdings_df_list[trans['Symbol']].loc[date, 'Shares'] += trans['Shares']
-            holdings_df_list[trans['Symbol']].loc[date, 'Price'] = trans['Price']
+            holdings_ts_list[trans['symbol']][date] += trans['shares']
+            #holdings_df_list[trans['symbol']].loc[date, 'shares'] += trans['shares']
+            holdings_df_list[trans['symbol']].loc[date, 'price'] = trans['price']
             
         
         #if a buy or a sell, adjust cash accordingly
-        if(trans['Trade']=='BUY' or trans['Trade']=='SELL'):
-            holdings_ts_list['MYCASH'][date] -= trans['Shares']*trans['Price']
-            holdings_ts_list['MYCASH'][date] -= trans['Commission']+trans['Fee']
+        if(trans['trade']=='BUY' or trans['trade']=='SELL'):
+            holdings_ts_list['MYCASH'][date] -= trans['shares']*trans['price']
+            holdings_ts_list['MYCASH'][date] -= trans['commission']+trans['fee']
             
-            holdings_df_list['MYCASH'].loc[date, 'Shares'] -= trans['Shares']*trans['Price']
-            holdings_df_list['MYCASH'].loc[date, 'Shares'] -= trans['Commission']+trans['Fee']
+            holdings_df_list['MYCASH'].loc[date, 'shares'] -= trans['shares']*trans['price']
+            holdings_df_list['MYCASH'].loc[date, 'shares'] -= trans['commission']+trans['fee']
                 
     
     holdings_ts_list = {i:j.cumsum() for i,j in holdings_ts_list.items()}
@@ -139,8 +140,8 @@ def get_current_holdings(holdings_ts_list):
     #holdings_dict = {i:j for i,j in holdings_ts_list.items() if j != 0.0}
     holdings_dict = {i:j for i,j in holdings_ts_list.items()}
     
-    holdings_df=DataFrame(0.0, index=holdings_dict.keys(), columns=['Shares', 'Price', 'Market Value'])
-    holdings_df['Shares']=holdings_dict.values()
+    holdings_df=DataFrame(0.0, index=holdings_dict.keys(), columns=['shares', 'price', 'market value'])
+    holdings_df['shares']=holdings_dict.values()
     
     return holdings_df
    
@@ -175,7 +176,7 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
         holdings_ts_list[symbol]=holdings_ts_list[symbol].asfreq(BDay(), method='pad')
         
         # convert to a data frame
-        pf_hist_df[symbol]=DataFrame(holdings_ts_list[symbol], columns=['Shares'])
+        pf_hist_df[symbol]=DataFrame(holdings_ts_list[symbol], columns=['shares'])
     
         # download prices for all dates.  If cash create a quote of all 1s
         # of the appropriate lenght
@@ -212,34 +213,36 @@ def get_rates_df(holdings_ts_list, symbols, tr_by_date_df):
     history=DataFrame(index=bdays, columns=symbols)
     
     for symbol in symbols:
-        history[symbol]=pf_hist_df[symbol]['Shares']*pf_hist_df[symbol]['Close']
+        history[symbol]=pf_hist_df[symbol]['shares']*pf_hist_df[symbol]['Close']
     
     #replace NaN with 0s
     history.fillna(0.0, inplace=True) 
     
     #sum up portfolio value for each day  
-    history['Worth']=history.sum(axis=1) 
+    history['worth']=history.sum(axis=1) 
     
     #add a cashflow column to know when deposits happened
     history['Cashflow']=get_cashflow(tr_by_date_df).asfreq(BDay())
     history['Cashflow'].fillna(0.0, inplace=True)  
     
     #create a yesterday column and add today's cashflow
-    history['Yesterday']=history['Worth'].shift(1)
+    history['Yesterday']=history['worth'].shift(1)
     history['Yesterday']=history['Yesterday']+history['Cashflow']
     
     # (t-(y+c))/(y+c) simplifies to t/(y+c)-1
-    rate=((history['Worth']-history['Yesterday'])/history['Yesterday'])+1
+    rate=((history['worth']-history['Yesterday'])/history['Yesterday'])+1
     cumrate=rate.cumprod()
 
     cumrate.fillna(1.0, inplace=True)
 
-    return history['Worth'], Series(cumrate, index=history.index), invalid_symbols
+    return history['worth'], Series(cumrate, index=history.index), invalid_symbols
     
 #@cache.cached(key_prefix='all_comments')
 def df_to_obj_list(df, index_name):
     df=df.reset_index()
     df.rename(columns={'index':index_name}, inplace=True)
+
+    print(df)
 
     #make list of objects from dataframe, for the datatable, add a row id for identifiaction of delete and modify
     object_list=[]
@@ -247,8 +250,9 @@ def df_to_obj_list(df, index_name):
         object_list.append(df.loc[df.index[i]].to_dict())
 
     #everything needs to be a string for datatable
-    return [dict([a, str(x)] for a, x in b.items()) for b in object_list]
+    object_list_str =  [dict([a, str(x)] for a, x in b.items()) for b in object_list]
 
+    return object_list_str
 
 def get_rates(csv_file):
     tr_by_date_df = get_trans("/Users/jakubdudek/transactions_all.csv")
@@ -273,8 +277,8 @@ def get_rates(csv_file):
 #holdings_df = get_current_holdings(holdings_ts_list)
 #        
 #cost_basis = get_costbasis(tr_by_date_df)
-#holdings_df = holdings_df.join(cost_basis['Basis'])
-#holdings_df = holdings_df.join(cost_basis['Realized'])
+#holdings_df = holdings_df.join(cost_basis['basis'])
+#holdings_df = holdings_df.join(cost_basis['realized'])
 #
 #holdings_list = df_to_obj_list(holdings_df, 'Ticker')
 
