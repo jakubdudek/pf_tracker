@@ -60,6 +60,7 @@ def create():
                 else:
                     id = request.form['id']
                     tr_df = tr_df[tr_df.id != int(id)]
+                    tr_df.to_sql('transaction_'+str(current_user.get_id()), db.engine, if_exists='replace')
 
             #new row to add
             add = [date, id, trade, symbol, shares, price, commission, fee]
