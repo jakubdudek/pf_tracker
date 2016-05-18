@@ -214,7 +214,8 @@
 
         $('#transtable').on( 'click', 'tbody td:not(:first-child)', function (e) {
             editor.inline( this, {
-                submit: 'all'
+                submit: 'all',
+                buttons: { label: '&gt;', fn: function () { this.submit(); } }
             } );
         } );
 
