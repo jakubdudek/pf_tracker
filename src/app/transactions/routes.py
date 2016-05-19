@@ -166,7 +166,7 @@ def get_table():
     # turn into json format for ajax
 
     tr_json = {"data" : tr_list}
-    print(tr_json)
+    #print(tr_json)
     return json.dumps(tr_json)
 
 
