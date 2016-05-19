@@ -121,7 +121,7 @@ def create():
 #         return json.dumps(errors);   
 
 
-@transactions.route('/delete', methods='POST')
+@transactions.route('/delete', methods=['POST'])
 @login_required
 def delete():
     print("Deleting transaction...")
