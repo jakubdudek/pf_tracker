@@ -27,11 +27,11 @@ def index():
     holdings_df = holdings_df.join(cost_basis['basis'])
     holdings_df = holdings_df.join(cost_basis['realized'])
         
-    print(holdings_df)
+    #print(holdings_df)
 
     #    # turn into a list for datatables
     holdings_list = pf.df_to_obj_list(holdings_df, 'ticker')
-    print(holdings_list)
+    #print(holdings_list)
 
     #except:
     #    holdings_list =[]
