@@ -50,7 +50,7 @@ def create():
 
             # open database, create one if this is the first transaction
             try:
-                tr_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='date')
+                tr_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='date') 
             except:
                 id = 0
             else:
@@ -155,13 +155,14 @@ def get_table():
     # look for transactions tables in database, if not present empty table
     try:
         tr_df=pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='id')
+    except:
+        tr_list = []
+        flash("No data found, please upload a file or add a transaction")
+    else:
         tr_list = pf.df_to_obj_list(tr_df, 'date') 
         #remove time stamps from dates
         for i in range(0, len(tr_list)):
             tr_list[i]['date'] = tr_list[i]['date'].split(' ')[0]  
-    except:
-        tr_list = []
-        flash("No data found, please upload a file or add a transaction")
 
     # turn into json format for ajax
 
