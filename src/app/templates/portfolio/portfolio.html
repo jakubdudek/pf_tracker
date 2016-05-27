@@ -85,7 +85,28 @@
 
 
     <script>
+
+    var looping = 0;
+    var refreshIntervalId;
+
+    var holdings = {{ holdings|safe }}
+    var symbols = getSymbols(holdings)
         
+    var url = "http://query.yahooapis.com/v1/public/yql?";
+    var url_data = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbols + "')");
+    var url_arg = 'q=' + url_data + "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
+
+    document.getElementById("update_btn").onclick = draw_table;
+
+    // set default cookie
+    if(!checkCookie("show_closed")){
+        setCookie("show_closed", false, 365)
+    }
+    
+    document.getElementById("show_closed").checked = (getCookie("show_closed") == "true") ? true:false;
+    draw_table();
+    
+    
     function auto_update() {
         if(looping) {
             clearInterval(refreshIntervalId);
@@ -182,76 +203,34 @@
             return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        //format for display
-        for(var i = 0; i < holdings.length; i++) {
-            holdings[i].shares = numberWithCommas((parseFloat(holdings[i].shares)).toFixed(2));
-            holdings[i].price = (parseFloat(holdings[i].price)).toFixed(2);
-            holdings[i].change = get_color((parseFloat(holdings[i].change)).toFixed(2));
-            holdings[i].percentChange = get_color((parseFloat(holdings[i].percentChange)).toFixed(2), 'true');
-            holdings[i]['market value'] = numberWithCommas((parseFloat(holdings[i]['market value'])).toFixed(2));
-            holdings[i].weight = (parseFloat(holdings[i].weight)).toFixed(2).concat("%");
-            holdings[i].basis = (parseFloat(holdings[i].basis)).toFixed(2)
-            holdings[i].realized = numberWithCommas(get_color((parseFloat(holdings[i].realized)).toFixed(2)))
-            holdings[i].unrealized = numberWithCommas(get_color((parseFloat(holdings[i].unrealized)).toFixed(2)))
-            holdings[i].unrealized_p = get_color((parseFloat(holdings[i].unrealized_p)).toFixed(2), 'true');
-        }
         return holdings
     }
 
     function get_color(cell_data, percent) {
-        
         if(parseFloat(cell_data)>=0.0){
-            if(percent){
-                return ("<font color=\"green\">").concat(cell_data).concat(" %</font>")
-            }
-            else{
-                return ("<font color=\"green\">").concat(cell_data).concat("</font>")
-            }
+            return ("<font color=\"green\">").concat(cell_data).concat("</font>")
         }
         else{
-            if(percent){
-                return ("<font color=\"red\">").concat(cell_data).concat(" %</font>")
-            }
-            else{
-                return ("<font color=\"red\">").concat(cell_data).concat("</font>")
-            }
+            return ("<font color=\"red\">").concat(cell_data).concat("</font>")
         }
+    }
+
+    function numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
     function remove_closed(holdings){
         var j = 0;
         var opened = [];
         for(var i = 0; i < holdings.length; i++) {
-            if(holdings[i].shares != 0){
+            if(holdings[i].shares > 0.1){
                 opened[j++] = holdings[i];
             }
         }
         return opened
     }
 
-
-    $.fn.dataTable.render.color_cell = function () {
-        $.fn.dataTable.render.number( ',', '.', 2)
-        return function ( data, type, row ) {
-            if ( type === 'display' ) {
-                var str = data.toString(); // cast numbers
-                return parseFloat(data) < 0.0 ? str.fontcolor("green") : str.fontcolor("red");
-            }
-     
-            // Search, order and type can use the original data
-            return data;
-        }
-    };
-
-
     function draw_table(){
-
-        var holdings = {{ holdings|safe }}
-        var symbols = getSymbols(holdings)
-        
-        var url = "http://query.yahooapis.com/v1/public/yql?";
-        var url_data = encodeURIComponent("select * from yahoo.finance.quotes where symbol in ('" + symbols + "')");
-        var url_arg = 'q=' + url_data + "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=";
 
         $(document).ready(function() {
 
@@ -265,8 +244,7 @@
                 // draw portfolio table
                 var dt = $('#portfolio').DataTable( {
                     retrieve: true,
-                    "pageLength": 50,
-
+                    pageLength: 50,
                     columns: [
                         { data : 'ticker' },
                         { data : 'shares' },
@@ -282,12 +260,32 @@
                     ],
                     //decending order of weight
                     order: [[ 6, "desc" ]],
-
                     columnDefs: [
                         {
-                            targets: [1,2,3,4,5,6,7,8,9,10],
-                            className: 'text-right' 
-                            //render: $.fn.dataTable.render.color_cell()
+                            targets: [3,4,8,9,10],
+                            className: 'text-right',
+                            render: function(data, type, row, meta){
+                                if(meta.col == 4 || meta.col == 10){
+                                    return numberWithCommas(get_color(parseFloat(data).toFixed(2).toString().concat("%")))
+                                }
+                                else{
+                                    return numberWithCommas(get_color(parseFloat(data).toFixed(2)))    
+                                }
+                            }
+
+                        },
+                        {
+                            targets: [1,2,5,6,7],
+                            className: 'text-right',
+                            render: function(data, type, row, meta){
+                                var ret;
+                                ret =  numberWithCommas((parseFloat(data)).toFixed(2));
+                                if(meta.col == 6){
+                                    ret = ret.concat("%");
+                                }
+                                return ret;
+                            }
+
                         }
                     ],
 
@@ -300,58 +298,54 @@
                       
                 // Make monochrome colors and set them as default for all pies
                 Highcharts.getOptions().plotOptions.pie.colors = (function () {
-                                                                            var colors = [],
-                                                                            base = Highcharts.getOptions().colors[0],
-                                                                            i;
-                                                                          
-                                                                            for (i = 0; i < weight_data.length; i += 1) {
-                                                                                // Start out with a darkened base color (negative brighten), and end
-                                                                                // up with a much brighter color
-                                                                                colors.push(Highcharts.Color(base).brighten((i - weight_data.length) / 20).get());
-                                                                            }
-                                                                            return colors;
-                                                                          }());
+                    var colors = [],
+                    base = Highcharts.getOptions().colors[0],
+                    i;
+                  
+                    for (i = 0; i < weight_data.length; i += 1) {
+                        // Start out with a darkened base color (negative brighten), and end
+                        // up with a much brighter color
+                        colors.push(Highcharts.Color(base).brighten((i - weight_data.length) / 20).get());
+                    }
+                    return colors;
+                  }());
                       
                 // Build the chart
                 $('#piechart').highcharts({
-                                                chart: {
-                                                    plotBackgroundColor: null,
-                                                    plotBorderWidth: null,
-                                                    plotShadow: false
-                                                },
-                                                title: {
-                                                    text: 'Portfolio Pie Chart'
-                                                },
-                                                tooltip: {
-                                                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
-                                                },
-                                                plotOptions: {
-                                                    pie: {
-                                                        allowPointSelect: true,
-                                                        cursor: 'pointer',
-                                                        dataLabels: {
-                                                            enabled: true,
-                                                            format: '<b>{point.name}</b>: {point.percentage:.1f} %',
-                                                            style: {
-                                                                color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                series: [{
-                                                         type: 'pie',
-                                                         name: 'Holdings Weight',
-                                                         data: weight_data
-                                                         }]
+                    chart: {
+                        plotBackgroundColor: null,
+                        plotBorderWidth: null,
+                        plotShadow: false
+                    },
+                    title: {
+                        text: 'Portfolio Pie Chart'
+                    },
+                    tooltip: {
+                        pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                enabled: true,
+                                format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                                style: {
+                                    color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                                }
+                            }
+                        }
+                    },
+                    series: [{
+                             type: 'pie',
+                             name: 'Holdings Weight',
+                             data: weight_data
+                             }]
                 });
             });
         });                
     }
 
-    </script>
-
-
-    <script>
     function setCookie(cname, cvalue, exdays) {
         var d = new Date();
         d.setTime(d.getTime() + (exdays*24*60*60*1000));
@@ -378,25 +372,37 @@
             return false;
         }
     }
-
-    </script>
-
-
-    <script>
-        document.getElementById("update_btn").onclick = draw_table;
         
     </script>
 
-    <script>
-    // set default cookie
-    if(!checkCookie("show_closed")){
-        setCookie("show_closed", false, 365)
-    }
-    document.getElementById("show_closed").checked = (getCookie("show_closed") == "true") ? true:false;
-    draw_table();
-    var looping = 0;
-    var refreshIntervalId;
-
-    </script>
-
     {% endblock %}
+
+
+
+    <!--dom: '<"toolbar">Bfrtip',
+                    buttons:[
+                        {
+                            text: 'Update',
+                            action: function ( e, dt, node, config ) {
+                                draw_table();
+                            }
+                        },
+                        {
+                            text: 'Auto-Update',
+                            action: function ( e, dt, node, config ) {
+                                auto_update();
+                                dt.buttons.get = 'Stop Auto Update';
+                            }
+                        },
+                        {
+                            text: 'Show Closed Positions',
+                            action: function ( e, dt, node, config ) {
+                                show_closed();
+                                e.text = 'Show Opened';
+                            }
+                        }
+                    ]
+
+                } );
+
+                $("div.toolbar").html('<input type="checkbox" name="auto update" onchange="auto_update()"> Auto Update</input>');-->
