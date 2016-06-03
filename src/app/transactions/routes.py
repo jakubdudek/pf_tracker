@@ -132,10 +132,11 @@ def delete():
 
         # open database table
         tr_df = pd.read_sql_table('transaction_'+str(current_user.get_id()), db.engine, index_col='date')
-   
+
+
         # remove entry matching ID
-        for i in range(0, len(id)):
-            tr_df = tr_df[tr_df.id != int(id[i])]
+        # for i in range(0, len(id)):
+        tr_df = tr_df[tr_df.id != int(id)]
 
         # rewrite the table to database
         tr_df.to_sql('transaction_'+str(current_user.get_id()), db.engine, if_exists='replace')
